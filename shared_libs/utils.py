@@ -4,7 +4,6 @@ Provides JSON-structured logging with Cloud Trace integration,
 Cloud Monitoring metrics, and versioning for the Lean Hub
 """
 
-
 import json
 import logging
 import os

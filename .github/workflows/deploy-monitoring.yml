@@ -36,15 +36,27 @@ jobs:
       
       - name: Deploy Dashboard via gcloud
         run: |
-          # Deploy dashboard using gcloud CLI (simpler than Terraform for dashboard only)
+          echo "📊 Creating monitoring dashboard..."
+          
+          # Check if dashboard already exists
+          EXISTING=$(gcloud monitoring dashboards list \
+            --project=${{ secrets.GCP_PROJECT_ID }} \
+            --format="value(name)" \
+            --filter="displayName='Lean Hub - Centralized Dashboard'" 2>/dev/null || echo "")
+          
+          if [ -n "$EXISTING" ]; then
+            echo "⚠️  Dashboard already exists: $EXISTING"
+            echo "Deleting old dashboard to update..."
+            gcloud monitoring dashboards delete "$EXISTING" \
+              --project=${{ secrets.GCP_PROJECT_ID }} --quiet
+          fi
+          
+          # Create dashboard
           gcloud monitoring dashboards create \
             --config-from-file=infrastructure/dashboard-config.json \
-            --project=${{ secrets.GCP_PROJECT_ID }} \
-            || echo "Dashboard may already exist - updating is not supported via gcloud CLI"
+            --project=${{ secrets.GCP_PROJECT_ID }}
           
-          # Note: Dashboard updates require manual intervention or Terraform
-          # For now, this creates the dashboard on first run
-          echo "Dashboard deployment complete"
+          echo "✅ Dashboard created successfully!"
           echo "View at: https://console.cloud.google.com/monitoring/dashboards?project=${{ secrets.GCP_PROJECT_ID }}"
       
       - name: Output Dashboard Link

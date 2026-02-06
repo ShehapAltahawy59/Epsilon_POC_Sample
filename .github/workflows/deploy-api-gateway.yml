@@ -57,15 +57,25 @@ jobs:
 
       - name: Update API Gateway Config
         run: |
+          # Set default placeholder URLs for services that aren't deployed
+          PROJECT1_URL="${{ steps.get-urls.outputs.project1_url }}"
+          PROJECT2_URL="${{ steps.get-urls.outputs.project2_url }}"
+          PROJECT3_URL="${{ steps.get-urls.outputs.project3_url }}"
+          
+          # If any URL is empty, keep the placeholder
+          [ -z "$PROJECT1_URL" ] && PROJECT1_URL="https://project-1-placeholder"
+          [ -z "$PROJECT2_URL" ] && PROJECT2_URL="https://project-2-rag-placeholder"
+          [ -z "$PROJECT3_URL" ] && PROJECT3_URL="https://project-3-placeholder"
+          
           # Create updated config with actual service URLs
           sed "s|YOUR-FIREBASE-PROJECT-ID|${{ env.FIREBASE_PROJECT_ID }}|g" \
               infrastructure/api-gateway-config.yaml | \
-          sed "s|https://project-1-placeholder|${{ steps.get-urls.outputs.project1_url }}|g" | \
-          sed "s|https://project-2-rag-placeholder|${{ steps.get-urls.outputs.project2_url }}|g" | \
-          sed "s|https://project-3-placeholder|${{ steps.get-urls.outputs.project3_url }}|g" \
+          sed "s|https://project-1-placeholder|${PROJECT1_URL}|g" | \
+          sed "s|https://project-2-rag-placeholder|${PROJECT2_URL}|g" | \
+          sed "s|https://project-3-placeholder|${PROJECT3_URL}|g" \
               > /tmp/api-gateway-config-updated.yaml
           
-              
+
           echo "✅ API Gateway config updated"
           echo "=== Full updated config ==="
           cat /tmp/api-gateway-config-updated.yaml

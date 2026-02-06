@@ -353,7 +353,7 @@ def get_lib_info() -> Dict[str, Any]:
     Used for surgical versioning and dependency tracking.
     """
     return {
-        "version": "1.0.0",
+        "version": "2.0.0",
         "library": "shared_libs",
         "description": "Lean Hub Shared Utilities",
         "timestamp": datetime.utcnow().isoformat()

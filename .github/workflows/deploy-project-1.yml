@@ -44,12 +44,21 @@ jobs:
         run: |
           gcloud auth configure-docker ${{ env.GAR_LOCATION }}-docker.pkg.dev
 
-      - name: Detect shared_libs version
+      - name: Read shared_libs version
         id: lib-version
         run: |
-          VERSION=$(grep -oP '(?<=version": ")[^"]+' shared_libs/utils.py | head -1)
+          VERSION=$(cat project_1/shared_lib_version)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Detected shared_libs version: $VERSION"
+          echo "📦 Project 1 uses shared_libs version: $VERSION"
+
+      - name: Checkout shared_libs at pinned version
+        run: |
+          VERSION=$(cat project_1/shared_lib_version)
+          echo "🔄 Checking out shared_libs at v$VERSION..."
+          git fetch --tags
+          # Checkout shared_libs folder from the specific tag
+          git checkout "v$VERSION" -- shared_libs/
+          echo "✅ shared_libs checked out at v$VERSION"
 
       - name: Build Docker image
         run: |

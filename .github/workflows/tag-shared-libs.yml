@@ -1,0 +1,78 @@
+name: 'Tag Shared Library Version'
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'shared_libs/**'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to tag (e.g., 2.0.0)'
+        required: true
+
+jobs:
+  tag-version:
+    name: Tag Shared Library
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect version from code
+        id: detect-version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION=$(grep -oP '(?<=version": ")[^"]+' shared_libs/utils.py | head -1)
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Detected version: $VERSION"
+
+      - name: Check if tag exists
+        id: check-tag
+        run: |
+          if git rev-parse "v${{ steps.detect-version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "⚠️  Tag v${{ steps.detect-version.outputs.version }} already exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "✅ Tag v${{ steps.detect-version.outputs.version }} is new"
+          fi
+
+      - name: Create and push tag
+        if: steps.check-tag.outputs.exists == 'false'
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag -a "v${{ steps.detect-version.outputs.version }}" -m "Shared library version ${{ steps.detect-version.outputs.version }}"
+          git push origin "v${{ steps.detect-version.outputs.version }}"
+          echo "✅ Tagged shared_libs as v${{ steps.detect-version.outputs.version }}"
+
+      - name: Create GitHub Release
+        if: steps.check-tag.outputs.exists == 'false'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.detect-version.outputs.version }}
+          release_name: Shared Library v${{ steps.detect-version.outputs.version }}
+          body: |
+            ## Shared Library Version ${{ steps.detect-version.outputs.version }}
+            
+            This release contains updates to the centralized shared utilities.
+            
+            ### What's Changed
+            - Check commit history for detailed changes
+            
+            ### Usage
+            Projects can pin to this version by updating their Dockerfile:
+            ```dockerfile
+            ENV SHARED_LIB_VERSION=v${{ steps.detect-version.outputs.version }}
+            ```
+          draft: false
+          prerelease: false

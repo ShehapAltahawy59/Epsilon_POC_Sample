@@ -1,0 +1,18 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+
+# GPU-accelerated ML libraries (optimized for NVIDIA L4)
+# torch==2.1.0+cu121
+# sentence-transformers==2.2.2
+# faiss-gpu==1.7.4
+
+# For production RAG implementation, uncomment above and add:
+# langchain==0.1.0
+# chromadb==0.4.22
+# openai==1.3.0
+
+# Observability (optional, for Cloud Monitoring)
+google-cloud-monitoring>=2.15.0
+google-cloud-logging>=3.5.0
+google-cloud-trace>=1.11.0

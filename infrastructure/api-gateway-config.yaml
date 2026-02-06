@@ -1,0 +1,132 @@
+swagger: '2.0'
+info:
+  title: Lean Hub API Gateway
+  description: Unified access point for all services with Firebase Authentication
+  version: 1.0.0
+
+host: hub.yourdomain.com
+schemes:
+  - https
+
+securityDefinitions:
+  firebase:
+    authorizationUrl: ""
+    flow: "implicit"
+    type: "oauth2"
+    x-google-issuer: "https://securetoken.google.com/YOUR-FIREBASE-PROJECT-ID"
+    x-google-jwks_uri: "https://www.googleapis.com/service_accounts/v1/metadata/x509/securetoken@system.gserviceaccount.com"
+    x-google-audiences: "YOUR-FIREBASE-PROJECT-ID"
+
+security:
+  - firebase: []
+
+paths:
+  /p1:
+    get:
+      summary: Project 1 Root
+      operationId: project1Root
+      x-google-backend:
+        address: https://project-1-HASH-uc.a.run.app
+        path_translation: CONSTANT_ADDRESS
+      responses:
+        '200':
+          description: Successful response
+  
+  /p1/health:
+    get:
+      summary: Project 1 Health
+      operationId: project1Health
+      x-google-backend:
+        address: https://project-1-HASH-uc.a.run.app/health
+        path_translation: CONSTANT_ADDRESS
+      responses:
+        '200':
+          description: Healthy
+  
+  /p1/version:
+    get:
+      summary: Project 1 Version
+      operationId: project1Version
+      x-google-backend:
+        address: https://project-1-HASH-uc.a.run.app/version
+        path_translation: CONSTANT_ADDRESS
+      responses:
+        '200':
+          description: Version info
+
+  /p2:
+    get:
+      summary: Project 2 RAG Root
+      operationId: project2Root
+      x-google-backend:
+        address: https://project-2-rag-HASH-uc.a.run.app
+        path_translation: CONSTANT_ADDRESS
+      responses:
+        '200':
+          description: Successful response
+  
+  /p2/health:
+    get:
+      summary: Project 2 Health
+      operationId: project2Health
+      x-google-backend:
+        address: https://project-2-rag-HASH-uc.a.run.app/health
+        path_translation: CONSTANT_ADDRESS
+      responses:
+        '200':
+          description: Healthy
+
+  /p2/query:
+    post:
+      summary: RAG Query
+      operationId: ragQuery
+      x-google-backend:
+        address: https://project-2-rag-HASH-uc.a.run.app/query
+        path_translation: CONSTANT_ADDRESS
+      responses:
+        '200':
+          description: Query results
+
+  /p2/index:
+    post:
+      summary: Index Documents
+      operationId: indexDocuments
+      x-google-backend:
+        address: https://project-2-rag-HASH-uc.a.run.app/index
+        path_translation: CONSTANT_ADDRESS
+      responses:
+        '200':
+          description: Indexed successfully
+
+  /p3:
+    get:
+      summary: Project 3 Root
+      operationId: project3Root
+      x-google-backend:
+        address: https://project-3-HASH-uc.a.run.app
+        path_translation: CONSTANT_ADDRESS
+      responses:
+        '200':
+          description: Successful response
+  
+  /p3/health:
+    get:
+      summary: Project 3 Health
+      operationId: project3Health
+      x-google-backend:
+        address: https://project-3-HASH-uc.a.run.app/health
+        path_translation: CONSTANT_ADDRESS
+      responses:
+        '200':
+          description: Healthy
+  
+  /p3/status:
+    get:
+      summary: Project 3 Status
+      operationId: project3Status
+      x-google-backend:
+        address: https://project-3-HASH-uc.a.run.app/status
+        path_translation: CONSTANT_ADDRESS
+      responses:
+        '200':
+          description: Status info

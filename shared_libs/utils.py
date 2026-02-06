@@ -14,7 +14,6 @@ from functools import wraps
 import time
 
 
-
 class JSONLogger:
     """
     JSON-structured logger for unified observability across all services.

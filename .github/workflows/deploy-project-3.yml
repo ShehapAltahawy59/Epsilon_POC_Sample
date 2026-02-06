@@ -69,6 +69,15 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Debug - Check authentication
+        run: |
+          echo "=== Current GCP Account ==="
+          gcloud auth list
+          echo "=== Current Project ==="
+          gcloud config get-value project
+          echo "=== Test Artifact Registry Access ==="
+          gcloud artifacts repositories list --location=${{ env.GAR_LOCATION }}
+
       - name: Configure Docker for GAR
         run: |
           gcloud auth configure-docker ${{ env.GAR_LOCATION }}-docker.pkg.dev

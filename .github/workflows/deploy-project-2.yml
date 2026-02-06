@@ -105,7 +105,7 @@ jobs:
             --set-env-vars GCP_PROJECT_ID=${{ env.GCP_PROJECT_ID }},SHARED_LIB_VERSION=${{ steps.lib-version.outputs.version }} \
             --gpu 1 \
             --gpu-type nvidia-l4 \
-            --max-instances 10 \
+            --max-instances 2 \
             --min-instances 0 \
             --memory 16Gi \
             --cpu 4

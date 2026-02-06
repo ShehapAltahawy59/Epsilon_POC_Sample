@@ -41,34 +41,24 @@ jobs:
       - name: Get Service URLs
         id: get-urls
         run: |
-          # Clear any cached credentials to get fresh data
-          gcloud config set project ${{ env.GCP_PROJECT_ID }}
+          # Use 'gcloud run services list' table format and parse URL from multi-line output
+          echo "🔍 Fetching service URLs from services list..."
           
-          # Get URLs for all three services with full format
-          echo "🔍 Fetching service URLs..."
-          PROJECT1_URL=$(gcloud run services describe project-1 \
-            --region=${{ env.GCP_REGION }} \
-            --format="value(status.url)" \
-            --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null || echo "")
-          PROJECT2_URL=$(gcloud run services describe project-2-rag \
-            --region=${{ env.GCP_REGION }} \
-            --format="value(status.url)" \
-            --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null || echo "")
-          PROJECT3_URL=$(gcloud run services describe project-3 \
-            --region=${{ env.GCP_REGION }} \
-            --format="value(status.url)" \
-            --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null || echo "")
+          # Get URLs by finding SERVICE line, then extracting URL line (2 lines below)
+          PROJECT1_URL=$(gcloud run services list --region=${{ env.GCP_REGION }} --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null | grep -A 2 "SERVICE: project-1" | grep "URL:" | awk '{print $2}' || echo "")
+          PROJECT2_URL=$(gcloud run services list --region=${{ env.GCP_REGION }} --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null | grep -A 2 "SERVICE: project-2-rag" | grep "URL:" | awk '{print $2}' || echo "")
+          PROJECT3_URL=$(gcloud run services list --region=${{ env.GCP_REGION }} --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null | grep -A 2 "SERVICE: project-3" | grep "URL:" | awk '{print $2}' || echo "")
           
           # Validate URLs are not empty
-          if [ -z "$PROJECT1_URL" ]; then
+          if [ -z "$PROJECT1_URL" ] || [ "$PROJECT1_URL" = "" ]; then
             echo "⚠️  Project 1 URL is empty, keeping placeholder"
             PROJECT1_URL="https://project-1-placeholder"
           fi
-          if [ -z "$PROJECT2_URL" ]; then
+          if [ -z "$PROJECT2_URL" ] || [ "$PROJECT2_URL" = "" ]; then
             echo "⚠️  Project 2 URL is empty, keeping placeholder"
             PROJECT2_URL="https://project-2-rag-placeholder"
           fi
-          if [ -z "$PROJECT3_URL" ]; then
+          if [ -z "$PROJECT3_URL" ] || [ "$PROJECT3_URL" = "" ]; then
             echo "⚠️  Project 3 URL is empty, keeping placeholder"
             PROJECT3_URL="https://project-3-placeholder"
           fi
@@ -77,6 +67,7 @@ jobs:
           echo "project2_url=$PROJECT2_URL" >> $GITHUB_OUTPUT
           echo "project3_url=$PROJECT3_URL" >> $GITHUB_OUTPUT
           
+          echo ""
           echo "✅ Service URLs retrieved:"
           echo "  Project 1: $PROJECT1_URL"
           echo "  Project 2: $PROJECT2_URL"

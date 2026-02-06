@@ -12,13 +12,17 @@ import os
 # Add shared_libs to path for import
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from shared_libs.utils import JSONLogger, get_lib_info, format_response, generate_correlation_id, extract_trace_id_from_header
+from shared_libs.utils import JSONLogger, get_lib_info, format_response, generate_correlation_id, extract_trace_id_from_header, setup_tracing, instrument_fastapi
 
 app = FastAPI(title="Project 1 API", version="1.0.0")
 
 # Initialize logger with project ID
 project_id = os.getenv('GCP_PROJECT_ID', 'local-dev')
 logger = JSONLogger("project_1", project_id=project_id)
+
+# Initialize OpenTelemetry tracing
+setup_tracing("project-1")
+instrument_fastapi(app)
 
 @app.middleware("http")
 async def add_trace_context(request: Request, call_next):

@@ -17,11 +17,17 @@ from shared_libs.utils import (
     get_lib_info, 
     format_response,
     generate_correlation_id,
-    extract_trace_id_from_header
+    extract_trace_id_from_header,
+    setup_tracing,
+    instrument_fastapi
 )
 
 app = FastAPI(title="Project 3 API", version="1.0.0")
 logger = JSONLogger("project_3")
+
+# Initialize OpenTelemetry tracing
+setup_tracing("project-3")
+instrument_fastapi(app)
 
 # Middleware for correlation ID and trace context
 @app.middleware("http")

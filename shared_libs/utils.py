@@ -1,7 +1,7 @@
 """
 Unified Observability and Utility Functions
 Provides JSON-structured logging with Cloud Trace integration, 
-Cloud Monitoring metrics, and versioning for the Lean Hub
+Cloud Monitoring metrics, OpenTelemetry tracing, and versioning for the Lean Hub
 """
 
 import json
@@ -12,6 +12,67 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 from functools import wraps
 import time
+
+
+def setup_tracing(service_name: str):
+    """
+    Initialize OpenTelemetry tracing with Google Cloud Trace exporter.
+    Call this once at app startup to enable distributed tracing.
+    
+    Args:
+        service_name: Name of the service (e.g., 'project-1')
+    
+    Returns:
+        TracerProvider or None if setup fails
+    """
+    try:
+        from opentelemetry import trace
+        from opentelemetry.sdk.trace import TracerProvider
+        from opentelemetry.sdk.trace.export import BatchSpanProcessor
+        from opentelemetry.sdk.resources import Resource
+        from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
+        
+        # Create resource with service name
+        resource = Resource.create({
+            "service.name": service_name,
+        })
+        
+        # Create tracer provider
+        provider = TracerProvider(resource=resource)
+        
+        # Add Cloud Trace exporter
+        cloud_trace_exporter = CloudTraceSpanExporter()
+        provider.add_span_processor(BatchSpanProcessor(cloud_trace_exporter))
+        
+        # Set as global tracer provider
+        trace.set_tracer_provider(provider)
+        
+        print(f"[TRACING] OpenTelemetry tracing initialized for {service_name}")
+        return provider
+    except ImportError as e:
+        print(f"[TRACING] OpenTelemetry not available: {e}")
+        return None
+    except Exception as e:
+        print(f"[TRACING] Failed to initialize tracing: {e}")
+        return None
+
+
+def instrument_fastapi(app):
+    """
+    Auto-instrument a FastAPI app with OpenTelemetry.
+    Creates spans for every incoming request automatically.
+    
+    Args:
+        app: FastAPI application instance
+    """
+    try:
+        from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+        FastAPIInstrumentor.instrument_app(app)
+        print("[TRACING] FastAPI auto-instrumentation enabled")
+    except ImportError:
+        print("[TRACING] FastAPI instrumentation not available - install opentelemetry-instrumentation-fastapi")
+    except Exception as e:
+        print(f"[TRACING] Failed to instrument FastAPI: {e}")
 
 
 

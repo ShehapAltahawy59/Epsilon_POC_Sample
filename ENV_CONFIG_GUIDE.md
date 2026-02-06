@@ -147,6 +147,24 @@ gcloud artifacts repositories create lean-hub \
 # You'll see: "Created repository [lean-hub]"
 ```
 
+**⚠️ CRITICAL: Grant GitHub Actions permission to push images:**
+```bash
+# Add service account permission to the repository
+gcloud artifacts repositories add-iam-policy-binding lean-hub \
+  --location=us-central1 \
+  --member="serviceAccount:github-actions@YOUR-PROJECT-ID.iam.gserviceaccount.com" \
+  --role="roles/artifactregistry.writer"
+
+# Replace YOUR-PROJECT-ID with your actual GCP project ID
+```
+
+**Verify permission was added:**
+```bash
+gcloud artifacts repositories get-iam-policy lean-hub --location=us-central1
+
+# You should see your service account with artifactregistry.writer role
+```
+
 **✅ Add to .env:**
 ```bash
 GAR_REPOSITORY=lean-hub

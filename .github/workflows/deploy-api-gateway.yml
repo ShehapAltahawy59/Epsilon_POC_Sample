@@ -109,6 +109,8 @@ jobs:
           echo ""
           echo "=== First 50 lines of updated config ==="
           head -50 /tmp/api-gateway-config-updated.yaml
+
+      - name: Enable Required Services
         run: |
           gcloud services enable apigateway.googleapis.com \
             servicemanagement.googleapis.com \

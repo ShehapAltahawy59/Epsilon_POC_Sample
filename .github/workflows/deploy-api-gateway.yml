@@ -41,13 +41,30 @@ jobs:
       - name: Get Service URLs
         id: get-urls
         run: |
-          # Use 'gcloud run services list' table format and parse URL from multi-line output
-          echo "🔍 Fetching service URLs from services list..."
+          # Use JSON format for reliable parsing
+          echo "🔍 Fetching service URLs using JSON format..."
           
-          # Get URLs by finding SERVICE line, then extracting URL line (2 lines below)
-          PROJECT1_URL=$(gcloud run services list --region=${{ env.GCP_REGION }} --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null | grep -A 2 "SERVICE: project-1" | grep "URL:" | awk '{print $2}' || echo "")
-          PROJECT2_URL=$(gcloud run services list --region=${{ env.GCP_REGION }} --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null | grep -A 2 "SERVICE: project-2-rag" | grep "URL:" | awk '{print $2}' || echo "")
-          PROJECT3_URL=$(gcloud run services list --region=${{ env.GCP_REGION }} --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null | grep -A 2 "SERVICE: project-3" | grep "URL:" | awk '{print $2}' || echo "")
+          # Get URLs using JSON format (more reliable than text parsing)
+          PROJECT1_URL=$(gcloud run services list \
+            --region=${{ env.GCP_REGION }} \
+            --project=${{ env.GCP_PROJECT_ID }} \
+            --format="json" \
+            --filter="metadata.name=project-1" 2>/dev/null | \
+            python3 -c "import sys, json; data = json.load(sys.stdin); print(data[0]['status']['url'] if data else '')" || echo "")
+          
+          PROJECT2_URL=$(gcloud run services list \
+            --region=${{ env.GCP_REGION }} \
+            --project=${{ env.GCP_PROJECT_ID }} \
+            --format="json" \
+            --filter="metadata.name=project-2-rag" 2>/dev/null | \
+            python3 -c "import sys, json; data = json.load(sys.stdin); print(data[0]['status']['url'] if data else '')" || echo "")
+          
+          PROJECT3_URL=$(gcloud run services list \
+            --region=${{ env.GCP_REGION }} \
+            --project=${{ env.GCP_PROJECT_ID }} \
+            --format="json" \
+            --filter="metadata.name=project-3" 2>/dev/null | \
+            python3 -c "import sys, json; data = json.load(sys.stdin); print(data[0]['status']['url'] if data else '')" || echo "")
           
           # Validate URLs are not empty
           if [ -z "$PROJECT1_URL" ] || [ "$PROJECT1_URL" = "" ]; then

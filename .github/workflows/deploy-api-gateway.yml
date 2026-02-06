@@ -41,28 +41,30 @@ jobs:
       - name: Get Service URLs
         id: get-urls
         run: |
-          # Parse default table output - it's the ONLY format that shows correct URLs
-          echo "🔍 Fetching service URLs from table output..."
+          echo "🔍 Fetching service URLs..."
           
-          # Parse table output with awk (find SERVICE line, then extract URL line after it)
-          # Remove color codes, normalize whitespace, then parse
-          PROJECT1_URL=$(gcloud run services list \
+          # Debug: Show raw output to understand format
+          echo "=== Raw gcloud output ==="
+          gcloud run services list \
             --region=${{ env.GCP_REGION }} \
-            --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null | \
-            sed 's/\x1b\[[0-9;]*m//g' | tr -s ' ' | \
-            awk '/SERVICE: project-1/{found=1} found && /URL:/{print $2; exit}' || echo "")
+            --project=${{ env.GCP_PROJECT_ID }} || true
+          echo "========================="
           
-          PROJECT2_URL=$(gcloud run services list \
+          # Use --format to get clean URLs directly (most reliable method)
+          PROJECT1_URL=$(gcloud run services describe project-1 \
             --region=${{ env.GCP_REGION }} \
-            --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null | \
-            sed 's/\x1b\[[0-9;]*m//g' | tr -s ' ' | \
-            awk '/SERVICE: project-2-rag/{found=1} found && /URL:/{print $2; exit}' || echo "")
+            --project=${{ env.GCP_PROJECT_ID }} \
+            --format="value(status.url)" 2>/dev/null || echo "")
           
-          PROJECT3_URL=$(gcloud run services list \
+          PROJECT2_URL=$(gcloud run services describe project-2-rag \
             --region=${{ env.GCP_REGION }} \
-            --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null | \
-            sed 's/\x1b\[[0-9;]*m//g' | tr -s ' ' | \
-            awk '/SERVICE: project-3/{found=1} found && /URL:/{print $2; exit}' || echo "")
+            --project=${{ env.GCP_PROJECT_ID }} \
+            --format="value(status.url)" 2>/dev/null || echo "")
+          
+          PROJECT3_URL=$(gcloud run services describe project-3 \
+            --region=${{ env.GCP_REGION }} \
+            --project=${{ env.GCP_PROJECT_ID }} \
+            --format="value(status.url)" 2>/dev/null || echo "")
           
           # Validate URLs are not empty
           if [ -z "$PROJECT1_URL" ] || [ "$PROJECT1_URL" = "" ]; then

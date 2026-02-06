@@ -75,6 +75,10 @@ jobs:
           gcloud auth list
           echo "=== Current Project ==="
           gcloud config get-value project
+          echo "=== GCP_PROJECT_ID from secret (length: ${#GCP_PROJECT_ID}) ==="
+          echo "'${{ secrets.GCP_PROJECT_ID }}'"
+          echo "=== Expected Docker path ==="
+          echo "${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.SERVICE_NAME }}"
           echo "=== Test Artifact Registry Access ==="
           gcloud artifacts repositories list --location=${{ env.GAR_LOCATION }}
 

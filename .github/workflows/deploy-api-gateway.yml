@@ -50,21 +50,14 @@ jobs:
             --project=${{ env.GCP_PROJECT_ID }} || true
           echo "========================="
           
-          # Use --format to get clean URLs directly (most reliable method)
-          PROJECT1_URL=$(gcloud run services describe project-1 \
+          # Parse table output - URL is in column 4, service name in column 2
+          SERVICES_OUTPUT=$(gcloud run services list \
             --region=${{ env.GCP_REGION }} \
-            --project=${{ env.GCP_PROJECT_ID }} \
-            --format="value(status.url)" 2>/dev/null || echo "")
+            --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null)
           
-          PROJECT2_URL=$(gcloud run services describe project-2-rag \
-            --region=${{ env.GCP_REGION }} \
-            --project=${{ env.GCP_PROJECT_ID }} \
-            --format="value(status.url)" 2>/dev/null || echo "")
-          
-          PROJECT3_URL=$(gcloud run services describe project-3 \
-            --region=${{ env.GCP_REGION }} \
-            --project=${{ env.GCP_PROJECT_ID }} \
-            --format="value(status.url)" 2>/dev/null || echo "")
+          PROJECT1_URL=$(echo "$SERVICES_OUTPUT" | awk '$2=="project-1" {print $4}')
+          PROJECT2_URL=$(echo "$SERVICES_OUTPUT" | awk '$2=="project-2-rag" {print $4}')
+          PROJECT3_URL=$(echo "$SERVICES_OUTPUT" | awk '$2=="project-3" {print $4}')
           
           # Validate URLs are not empty
           if [ -z "$PROJECT1_URL" ] || [ "$PROJECT1_URL" = "" ]; then

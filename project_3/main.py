@@ -3,6 +3,7 @@ Project 3: Simple API Service
 Another service demonstrating independent versioning in the Lean Hub
 """
 
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 import sys

@@ -3,6 +3,7 @@ Project 1: Simple API Service
 Demonstrates the Lean Hub architecture with versioned shared libraries
 """
 
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 import sys

@@ -3,6 +3,7 @@ Project 2: RAG System with GPU Acceleration
 Enterprise RAG service optimized for NVIDIA L4 GPUs
 """
 
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel

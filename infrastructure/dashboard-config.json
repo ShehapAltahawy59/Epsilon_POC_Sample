@@ -1,13 +1,115 @@
 {
-  "displayName": "Lean Hub - Centralized Dashboard",
+  "displayName": "Lean Hub - Overview",
   "mosaicLayout": {
     "columns": 12,
     "tiles": [
       {
-        "width": 4,
+        "width": 3,
+        "height": 3,
+        "widget": {
+          "title": "Total Requests",
+          "scorecard": {
+            "timeSeriesQuery": {
+              "timeSeriesFilter": {
+                "filter": "resource.type=\"cloud_run_revision\" metric.type=\"run.googleapis.com/request_count\"",
+                "aggregation": {
+                  "alignmentPeriod": "3600s",
+                  "perSeriesAligner": "ALIGN_SUM",
+                  "crossSeriesReducer": "REDUCE_SUM"
+                }
+              }
+            },
+            "sparkChartView": {
+              "sparkChartType": "SPARK_LINE"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 3,
+        "width": 3,
+        "height": 3,
+        "widget": {
+          "title": "Active Instances",
+          "scorecard": {
+            "timeSeriesQuery": {
+              "timeSeriesFilter": {
+                "filter": "resource.type=\"cloud_run_revision\" metric.type=\"run.googleapis.com/container/instance_count\"",
+                "aggregation": {
+                  "alignmentPeriod": "60s",
+                  "perSeriesAligner": "ALIGN_MEAN",
+                  "crossSeriesReducer": "REDUCE_SUM"
+                }
+              }
+            },
+            "sparkChartView": {
+              "sparkChartType": "SPARK_LINE"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "width": 3,
+        "height": 3,
+        "widget": {
+          "title": "Avg Latency (ms)",
+          "scorecard": {
+            "timeSeriesQuery": {
+              "timeSeriesFilter": {
+                "filter": "resource.type=\"cloud_run_revision\" metric.type=\"run.googleapis.com/request_latencies\"",
+                "aggregation": {
+                  "alignmentPeriod": "300s",
+                  "perSeriesAligner": "ALIGN_PERCENTILE_50",
+                  "crossSeriesReducer": "REDUCE_MEAN"
+                }
+              }
+            },
+            "sparkChartView": {
+              "sparkChartType": "SPARK_LINE"
+            }
+          }
+        }
+      },
+      {
+        "xPos": 9,
+        "width": 3,
+        "height": 3,
+        "widget": {
+          "title": "Error Count",
+          "scorecard": {
+            "timeSeriesQuery": {
+              "timeSeriesFilter": {
+                "filter": "resource.type=\"cloud_run_revision\" metric.type=\"run.googleapis.com/request_count\" metric.label.response_code_class!=\"2xx\"",
+                "aggregation": {
+                  "alignmentPeriod": "3600s",
+                  "perSeriesAligner": "ALIGN_SUM",
+                  "crossSeriesReducer": "REDUCE_SUM"
+                }
+              }
+            },
+            "sparkChartView": {
+              "sparkChartType": "SPARK_LINE"
+            },
+            "thresholds": [
+              {
+                "value": 10,
+                "color": "YELLOW"
+              },
+              {
+                "value": 50,
+                "color": "RED"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "yPos": 3,
+        "width": 6,
         "height": 4,
         "widget": {
-          "title": "Request Count",
+          "title": "Requests by Service",
           "xyChart": {
             "dataSets": [
               {
@@ -29,11 +131,12 @@
         }
       },
       {
-        "xPos": 4,
-        "width": 4,
+        "xPos": 6,
+        "yPos": 3,
+        "width": 6,
         "height": 4,
         "widget": {
-          "title": "Response Latency (p50)",
+          "title": "Response Latency by Service",
           "xyChart": {
             "dataSets": [
               {
@@ -55,90 +158,11 @@
         }
       },
       {
-        "xPos": 8,
+        "yPos": 7,
         "width": 4,
         "height": 4,
         "widget": {
-          "title": "Error Rate (4xx/5xx)",
-          "xyChart": {
-            "dataSets": [
-              {
-                "timeSeriesQuery": {
-                  "timeSeriesFilter": {
-                    "filter": "resource.type=\"cloud_run_revision\" metric.type=\"run.googleapis.com/request_count\" metric.label.response_code_class!=\"2xx\"",
-                    "aggregation": {
-                      "alignmentPeriod": "60s",
-                      "perSeriesAligner": "ALIGN_RATE",
-                      "crossSeriesReducer": "REDUCE_SUM",
-                      "groupByFields": ["resource.label.service_name"]
-                    }
-                  }
-                },
-                "plotType": "LINE"
-              }
-            ]
-          }
-        }
-      },
-      {
-        "yPos": 4,
-        "width": 6,
-        "height": 4,
-        "widget": {
-          "title": "CPU Utilization",
-          "xyChart": {
-            "dataSets": [
-              {
-                "timeSeriesQuery": {
-                  "timeSeriesFilter": {
-                    "filter": "resource.type=\"cloud_run_revision\" metric.type=\"run.googleapis.com/container/cpu/utilizations\"",
-                    "aggregation": {
-                      "alignmentPeriod": "60s",
-                      "perSeriesAligner": "ALIGN_MEAN",
-                      "crossSeriesReducer": "REDUCE_MEAN",
-                      "groupByFields": ["resource.label.service_name"]
-                    }
-                  }
-                },
-                "plotType": "LINE"
-              }
-            ]
-          }
-        }
-      },
-      {
-        "xPos": 6,
-        "yPos": 4,
-        "width": 6,
-        "height": 4,
-        "widget": {
-          "title": "Memory Utilization",
-          "xyChart": {
-            "dataSets": [
-              {
-                "timeSeriesQuery": {
-                  "timeSeriesFilter": {
-                    "filter": "resource.type=\"cloud_run_revision\" metric.type=\"run.googleapis.com/container/memory/utilizations\"",
-                    "aggregation": {
-                      "alignmentPeriod": "60s",
-                      "perSeriesAligner": "ALIGN_MEAN",
-                      "crossSeriesReducer": "REDUCE_MEAN",
-                      "groupByFields": ["resource.label.service_name"]
-                    }
-                  }
-                },
-                "plotType": "LINE"
-              }
-            ]
-          }
-        }
-      },
-      {
-        "yPos": 8,
-        "width": 6,
-        "height": 4,
-        "widget": {
-          "title": "Active Instances",
+          "title": "Instances by Service",
           "xyChart": {
             "dataSets": [
               {
@@ -153,34 +177,61 @@
                     }
                   }
                 },
-                "plotType": "STACKED_AREA"
+                "plotType": "STACKED_BAR"
               }
             ]
           }
         }
       },
       {
-        "xPos": 6,
-        "yPos": 8,
-        "width": 6,
+        "xPos": 4,
+        "yPos": 7,
+        "width": 4,
         "height": 4,
         "widget": {
-          "title": "Billable Instance Time",
+          "title": "CPU Usage",
           "xyChart": {
             "dataSets": [
               {
                 "timeSeriesQuery": {
                   "timeSeriesFilter": {
-                    "filter": "resource.type=\"cloud_run_revision\" metric.type=\"run.googleapis.com/container/billable_instance_time\"",
+                    "filter": "resource.type=\"cloud_run_revision\" metric.type=\"run.googleapis.com/container/cpu/utilizations\"",
                     "aggregation": {
                       "alignmentPeriod": "60s",
-                      "perSeriesAligner": "ALIGN_RATE",
-                      "crossSeriesReducer": "REDUCE_SUM",
+                      "perSeriesAligner": "ALIGN_DELTA",
+                      "crossSeriesReducer": "REDUCE_MEAN",
                       "groupByFields": ["resource.label.service_name"]
                     }
                   }
                 },
-                "plotType": "STACKED_AREA"
+                "plotType": "LINE"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "xPos": 8,
+        "yPos": 7,
+        "width": 4,
+        "height": 4,
+        "widget": {
+          "title": "Memory Usage",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "resource.type=\"cloud_run_revision\" metric.type=\"run.googleapis.com/container/memory/utilizations\"",
+                    "aggregation": {
+                      "alignmentPeriod": "60s",
+                      "perSeriesAligner": "ALIGN_DELTA",
+                      "crossSeriesReducer": "REDUCE_MEAN",
+                      "groupByFields": ["resource.label.service_name"]
+                    }
+                  }
+                },
+                "plotType": "LINE"
               }
             ]
           }

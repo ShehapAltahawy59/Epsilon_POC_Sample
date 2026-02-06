@@ -108,6 +108,13 @@ jobs:
             --memory 4Gi \
             --cpu 2
 
+      - name: Grant API Gateway access
+        run: |
+          gcloud run services add-iam-policy-binding ${{ env.SERVICE_NAME }} \
+            --region=${{ env.GCP_REGION }} \
+            --member="serviceAccount:github-actions@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com" \
+            --role="roles/run.invoker"
+
       - name: Log deployment
         run: |
           echo "✅ Project 2 RAG deployed successfully (CPU-only mode)"

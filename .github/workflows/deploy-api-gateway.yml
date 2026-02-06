@@ -41,10 +41,37 @@ jobs:
       - name: Get Service URLs
         id: get-urls
         run: |
-          # Get URLs for all three services
-          PROJECT1_URL=$(gcloud run services describe project-1 --region=${{ env.GCP_REGION }} --format="value(status.url)" 2>/dev/null || echo "")
-          PROJECT2_URL=$(gcloud run services describe project-2-rag --region=${{ env.GCP_REGION }} --format="value(status.url)" 2>/dev/null || echo "")
-          PROJECT3_URL=$(gcloud run services describe project-3 --region=${{ env.GCP_REGION }} --format="value(status.url)" 2>/dev/null || echo "")
+          # Clear any cached credentials to get fresh data
+          gcloud config set project ${{ env.GCP_PROJECT_ID }}
+          
+          # Get URLs for all three services with full format
+          echo "🔍 Fetching service URLs..."
+          PROJECT1_URL=$(gcloud run services describe project-1 \
+            --region=${{ env.GCP_REGION }} \
+            --format="value(status.url)" \
+            --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null || echo "")
+          PROJECT2_URL=$(gcloud run services describe project-2-rag \
+            --region=${{ env.GCP_REGION }} \
+            --format="value(status.url)" \
+            --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null || echo "")
+          PROJECT3_URL=$(gcloud run services describe project-3 \
+            --region=${{ env.GCP_REGION }} \
+            --format="value(status.url)" \
+            --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null || echo "")
+          
+          # Validate URLs are not empty
+          if [ -z "$PROJECT1_URL" ]; then
+            echo "⚠️  Project 1 URL is empty, keeping placeholder"
+            PROJECT1_URL="https://project-1-placeholder"
+          fi
+          if [ -z "$PROJECT2_URL" ]; then
+            echo "⚠️  Project 2 URL is empty, keeping placeholder"
+            PROJECT2_URL="https://project-2-rag-placeholder"
+          fi
+          if [ -z "$PROJECT3_URL" ]; then
+            echo "⚠️  Project 3 URL is empty, keeping placeholder"
+            PROJECT3_URL="https://project-3-placeholder"
+          fi
           
           echo "project1_url=$PROJECT1_URL" >> $GITHUB_OUTPUT
           echo "project2_url=$PROJECT2_URL" >> $GITHUB_OUTPUT
@@ -57,15 +84,15 @@ jobs:
 
       - name: Update API Gateway Config
         run: |
-          # Set default placeholder URLs for services that aren't deployed
+          # Use the URLs from previous step (already validated)
           PROJECT1_URL="${{ steps.get-urls.outputs.project1_url }}"
           PROJECT2_URL="${{ steps.get-urls.outputs.project2_url }}"
           PROJECT3_URL="${{ steps.get-urls.outputs.project3_url }}"
           
-          # If any URL is empty, keep the placeholder
-          [ -z "$PROJECT1_URL" ] && PROJECT1_URL="https://project-1-placeholder"
-          [ -z "$PROJECT2_URL" ] && PROJECT2_URL="https://project-2-rag-placeholder"
-          [ -z "$PROJECT3_URL" ] && PROJECT3_URL="https://project-3-placeholder"
+          echo "🔧 Replacing placeholders with actual URLs..."
+          echo "  P1: $PROJECT1_URL"
+          echo "  P2: $PROJECT2_URL"
+          echo "  P3: $PROJECT3_URL"
           
           # Create updated config with actual service URLs
           sed "s|YOUR-FIREBASE-PROJECT-ID|${{ env.FIREBASE_PROJECT_ID }}|g" \
@@ -75,15 +102,13 @@ jobs:
           sed "s|https://project-3-placeholder|${PROJECT3_URL}|g" \
               > /tmp/api-gateway-config-updated.yaml
           
-
+          echo ""
           echo "✅ API Gateway config updated"
-          echo "=== Full updated config ==="
-          cat /tmp/api-gateway-config-updated.yaml
           echo "=== Validating YAML ==="
           python3 -c "import yaml; yaml.safe_load(open('/tmp/api-gateway-config-updated.yaml'))" && echo "✓ YAML is valid" || echo "✗ YAML is invalid"
-          head -30 /tmp/api-gateway-config-updated.yaml
-
-      - name: Enable API Gateway API
+          echo ""
+          echo "=== First 50 lines of updated config ==="
+          head -50 /tmp/api-gateway-config-updated.yaml
         run: |
           gcloud services enable apigateway.googleapis.com \
             servicemanagement.googleapis.com \

@@ -66,8 +66,10 @@ jobs:
               > /tmp/api-gateway-config-updated.yaml
           
           echo "✅ API Gateway config updated"
-          echo "Preview of updated config:"
-          head -50 /tmp/api-gateway-config-updated.yaml
+          echo "=== Full updated config ==="
+          cat /tmp/api-gateway-config-updated.yaml
+          echo "=== Validating YAML ==="
+          python3 -c "import yaml; yaml.safe_load(open('/tmp/api-gateway-config-updated.yaml'))" && echo "✓ YAML is valid" || echo "✗ YAML is invalid"
           head -30 /tmp/api-gateway-config-updated.yaml
 
       - name: Enable API Gateway API

@@ -59,13 +59,14 @@ jobs:
         run: |
           # Create updated config with actual service URLs
           sed -e "s|YOUR-FIREBASE-PROJECT-ID|${{ env.FIREBASE_PROJECT_ID }}|g" \
-              -e "s|https://project-1-HASH-uc.a.run.app|${{ steps.get-urls.outputs.project1_url }}|g" \
-              -e "s|https://project-2-HASH-uc.a.run.app|${{ steps.get-urls.outputs.project2_url }}|g" \
-              -e "s|https://project-3-HASH-uc.a.run.app|${{ steps.get-urls.outputs.project3_url }}|g" \
+              -e "s|https://project-1-[^/]*|${{ steps.get-urls.outputs.project1_url }}|g" \
+              -e "s|https://project-2-rag-[^/]*|${{ steps.get-urls.outputs.project2_url }}|g" \
+              -e "s|https://project-3-[^/]*|${{ steps.get-urls.outputs.project3_url }}|g" \
               infrastructure/api-gateway-config.yaml > /tmp/api-gateway-config-updated.yaml
           
           echo "✅ API Gateway config updated"
           echo "Preview of updated config:"
+          head -50 /tmp/api-gateway-config-updated.yaml
           head -30 /tmp/api-gateway-config-updated.yaml
 
       - name: Enable API Gateway API

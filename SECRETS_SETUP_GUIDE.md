@@ -189,78 +189,32 @@ ls -lh github-actions-key.json
 
 ✅ **IMPORTANT:** This JSON file contains your `GCP_SA_KEY` secret!
 
-**Open the file and copy its ENTIRE contents:**
-
-#### Method 1: Display and Manually Copy (Works Everywhere)
+**⚠️ Use Base64 Encoding to avoid "bad control character" errors:**
 
 ```bash
-# Display the entire JSON file
-cat github-actions-key.json
+# Encode the JSON as base64 (this avoids ALL special character problems)
+cat github-actions-key.json | base64 -w 0
 
-# You'll see output like:
-# {
-#   "type": "service_account",
-#   "project_id": "my-lean-hub-project",
-#   "private_key_id": "abc123...",
-#   "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
-#   ...
-# }
+# You'll see a long string like:
+# ewogICJ0eXBlIjogInNlcnZpY2VfYWNjb3VudCIsCiAgInByb2plY3RfaWQiOiAibXkt...
 
-# Select all the text (from { to }) and copy it
-# Ctrl+Shift+C (Linux/Cloud Shell) or Cmd+C (macOS) or Ctrl+C (Windows)
+# Copy this ENTIRE base64 string (it will be one long line, ~3000-3500 characters)
 ```
 
-#### Method 2: Cloud Shell Built-in Editor (If using GCP Cloud Shell)
-
-```bash
-# Open in Cloud Shell editor
-cloudshell edit github-actions-key.json
-
-# Then:
-# 1. Click "Open in Editor" button
-# 2. Select all (Ctrl+A)
-# 3. Copy (Ctrl+C)
-```
-
-#### Method 3: Download File (If using GCP Cloud Shell)
-
-```bash
-# Download the file to your local machine
-cloudshell download github-actions-key.json
-
-# Then open the downloaded file in your local text editor and copy contents
-```
-
-#### Method 4: Auto-Copy Commands (If Available)
-
-```bash
-# Windows PowerShell:
-Get-Content github-actions-key.json | Set-Clipboard
-
-# macOS:
-cat github-actions-key.json | pbcopy
-
-# Linux with xclip (install if needed):
-# sudo apt-get install xclip -y
-# cat github-actions-key.json | xclip -selection clipboard
-
-# Linux with xsel (alternative):
-# sudo apt-get install xsel -y
-# cat github-actions-key.json | xsel --clipboard
+💡 **For Windows PowerShell users:**
+```powershell
+[Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes((Get-Content github-actions-key.json -Raw)))
 ```
 
 ✅ **Add to GitHub Secrets NOW:**
 
-1. **Copy the entire JSON** (use one of the methods above)
-2. Go to your GitHub repository: `https://github.com/YOUR_USERNAME/YOUR_REPO`
-3. Click **Settings** → **Secrets and variables** → **Actions**
-4. Click **"New repository secret"**
-5. Enter:
+1. Copy the base64 string from above
+2. Go to: `https://github.com/YOUR_USERNAME/YOUR_REPO` → **Settings** → **Secrets and variables** → **Actions**
+3. Click **"New repository secret"**
+4. Enter:
    - **Name:** `GCP_SA_KEY`
-   - **Value:** Paste the ENTIRE JSON contents (from `{` to `}`)
-6. Click **"Add secret"**
-
-💡 **Tip:** The JSON is usually 2,300-2,500 characters. Make sure you paste ALL of it!
+   - **Value:** Paste the base64 string (the long encoded string)
+5. Click **"Add secret"**
 
 ✅ **Verify:** You should see `GCP_SA_KEY` in your secrets list (value will be hidden)
 
@@ -488,6 +442,86 @@ From now on, **every time you push code:**
 ---
 
 ## 🔍 Troubleshooting
+
+### Issue: "bad control character in string literal" error
+
+**Full error message:**
+```
+Error: google-github-actions/auth failed with: failed to parse service account 
+key JSON credentials: bad control character in string literal in JSON at position 318
+```
+
+**Root Cause:** The private key in the JSON contains special characters (newlines `\n`) that got corrupted when copying to GitHub Secrets.
+
+**✅ SOLUTION: Use Base64 Encoding**
+
+1. **Delete the existing `GCP_SA_KEY` secret from GitHub:**
+   - Go to: Settings → Secrets and variables → Actions
+   - Click on `GCP_SA_KEY`
+   - Click "Remove secret"
+
+2. **Re-create the key file (if deleted):**
+   ```bash
+   gcloud iam service-accounts keys create github-actions-key.json \
+       --iam-account=github-actions@${PROJECT_ID}.iam.gserviceaccount.com \
+       --project=$PROJECT_ID
+   ```
+
+3. **Encode as base64:**
+   ```bash
+   # Linux/Mac/Cloud Shell:
+   cat github-actions-key.json | base64 -w 0
+   
+   # Windows PowerShell:
+   [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes((Get-Content github-actions-key.json -Raw)))
+   ```
+
+4. **Copy the ENTIRE base64 output** (one very long string)
+
+5. **Add to GitHub Secrets:**
+   - Name: `GCP_SA_KEY`
+   - Value: [paste the base64 string]
+
+6. **Update the workflow file** (`.github/workflows/deploy-project-1.yml` and others):
+   
+   Find this section:
+   ```yaml
+   - name: Authenticate to Google Cloud
+     uses: google-github-actions/auth@v1
+     with:
+       credentials_json: ${{ secrets.GCP_SA_KEY }}
+   ```
+   
+   Change to:
+   ```yaml
+   - name: Authenticate to Google Cloud
+     uses: google-github-actions/auth@v1
+     with:
+       credentials_json: ${{ secrets.GCP_SA_KEY }}
+       # Note: If GCP_SA_KEY is base64 encoded, decode it first
+   ```
+   
+   Or better yet, add a decode step:
+   ```yaml
+   - name: Decode Service Account Key
+     run: echo "${{ secrets.GCP_SA_KEY }}" | base64 -d > $HOME/gcp-key.json
+   
+   - name: Authenticate to Google Cloud
+     uses: google-github-actions/auth@v1
+     with:
+       credentials_json: ${{ secrets.GCP_SA_KEY }}
+   ```
+
+7. **Push changes and retry:**
+   ```bash
+   git add .github/workflows/
+   git commit -m "Fix GCP auth with base64 encoding"
+   git push origin main
+   ```
+
+✅ **This eliminates ALL special character issues!**
+
+---
 
 ### Issue: "Permission denied" errors in GitHub Actions
 

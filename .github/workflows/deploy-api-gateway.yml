@@ -1,0 +1,178 @@
+name: 'Deploy API Gateway'
+
+on:
+  workflow_dispatch:  # Manual trigger
+  workflow_run:
+    workflows: ["Surgical Deploy: Project 1", "Surgical Deploy: Project 2 RAG", "Surgical Deploy: Project 3"]
+    types:
+      - completed
+    branches: [main]
+
+env:
+  # Secrets from GitHub
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  
+  # Configuration
+  GCP_REGION: us-central1
+  API_GATEWAY_NAME: lean-hub-gateway
+  API_GATEWAY_API: lean-hub-api
+  API_GATEWAY_CONFIG: lean-hub-config
+  FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+
+jobs:
+  deploy-gateway:
+    name: Deploy API Gateway
+    runs-on: ubuntu-latest
+    # Only run if previous workflow succeeded
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Get Service URLs
+        id: get-urls
+        run: |
+          # Get URLs for all three services
+          PROJECT1_URL=$(gcloud run services describe project-1 --region=${{ env.GCP_REGION }} --format="value(status.url)" 2>/dev/null || echo "")
+          PROJECT2_URL=$(gcloud run services describe project-2-rag --region=${{ env.GCP_REGION }} --format="value(status.url)" 2>/dev/null || echo "")
+          PROJECT3_URL=$(gcloud run services describe project-3 --region=${{ env.GCP_REGION }} --format="value(status.url)" 2>/dev/null || echo "")
+          
+          echo "project1_url=$PROJECT1_URL" >> $GITHUB_OUTPUT
+          echo "project2_url=$PROJECT2_URL" >> $GITHUB_OUTPUT
+          echo "project3_url=$PROJECT3_URL" >> $GITHUB_OUTPUT
+          
+          echo "✅ Service URLs retrieved:"
+          echo "  Project 1: $PROJECT1_URL"
+          echo "  Project 2: $PROJECT2_URL"
+          echo "  Project 3: $PROJECT3_URL"
+
+      - name: Update API Gateway Config
+        run: |
+          # Create updated config with actual service URLs
+          sed -e "s|YOUR-FIREBASE-PROJECT-ID|${{ env.FIREBASE_PROJECT_ID }}|g" \
+              -e "s|https://project-1-HASH-uc.a.run.app|${{ steps.get-urls.outputs.project1_url }}|g" \
+              -e "s|https://project-2-HASH-uc.a.run.app|${{ steps.get-urls.outputs.project2_url }}|g" \
+              -e "s|https://project-3-HASH-uc.a.run.app|${{ steps.get-urls.outputs.project3_url }}|g" \
+              infrastructure/api-gateway-config.yaml > /tmp/api-gateway-config-updated.yaml
+          
+          echo "✅ API Gateway config updated"
+          echo "Preview of updated config:"
+          head -30 /tmp/api-gateway-config-updated.yaml
+
+      - name: Enable API Gateway API
+        run: |
+          gcloud services enable apigateway.googleapis.com \
+            servicemanagement.googleapis.com \
+            servicecontrol.googleapis.com \
+            --project=${{ env.GCP_PROJECT_ID }}
+
+      - name: Create or Update API
+        run: |
+          # Check if API exists
+          if gcloud api-gateway apis describe ${{ env.API_GATEWAY_API }} --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null; then
+            echo "✅ API ${{ env.API_GATEWAY_API }} already exists"
+          else
+            echo "📦 Creating API ${{ env.API_GATEWAY_API }}"
+            gcloud api-gateway apis create ${{ env.API_GATEWAY_API }} \
+              --project=${{ env.GCP_PROJECT_ID }}
+          fi
+
+      - name: Create API Config
+        id: create-config
+        run: |
+          # Generate unique config name with timestamp
+          CONFIG_NAME="${{ env.API_GATEWAY_CONFIG }}-$(date +%Y%m%d-%H%M%S)"
+          echo "config_name=$CONFIG_NAME" >> $GITHUB_OUTPUT
+          
+          echo "📦 Creating API Config: $CONFIG_NAME"
+          gcloud api-gateway api-configs create $CONFIG_NAME \
+            --api=${{ env.API_GATEWAY_API }} \
+            --openapi-spec=/tmp/api-gateway-config-updated.yaml \
+            --project=${{ env.GCP_PROJECT_ID }} \
+            --backend-auth-service-account=github-actions@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+          
+          echo "✅ API Config created: $CONFIG_NAME"
+
+      - name: Create or Update Gateway
+        run: |
+          # Check if gateway exists
+          if gcloud api-gateway gateways describe ${{ env.API_GATEWAY_NAME }} \
+              --location=${{ env.GCP_REGION }} \
+              --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null; then
+            
+            echo "🔄 Updating existing gateway ${{ env.API_GATEWAY_NAME }}"
+            gcloud api-gateway gateways update ${{ env.API_GATEWAY_NAME }} \
+              --api=${{ env.API_GATEWAY_API }} \
+              --api-config=${{ steps.create-config.outputs.config_name }} \
+              --location=${{ env.GCP_REGION }} \
+              --project=${{ env.GCP_PROJECT_ID }}
+          else
+            echo "📦 Creating new gateway ${{ env.API_GATEWAY_NAME }}"
+            gcloud api-gateway gateways create ${{ env.API_GATEWAY_NAME }} \
+              --api=${{ env.API_GATEWAY_API }} \
+              --api-config=${{ steps.create-config.outputs.config_name }} \
+              --location=${{ env.GCP_REGION }} \
+              --project=${{ env.GCP_PROJECT_ID }}
+          fi
+
+      - name: Get Gateway URL
+        id: gateway-url
+        run: |
+          # Wait a bit for gateway to be ready
+          sleep 10
+          
+          GATEWAY_URL=$(gcloud api-gateway gateways describe ${{ env.API_GATEWAY_NAME }} \
+            --location=${{ env.GCP_REGION }} \
+            --project=${{ env.GCP_PROJECT_ID }} \
+            --format="value(defaultHostname)")
+          
+          echo "gateway_url=https://$GATEWAY_URL" >> $GITHUB_OUTPUT
+          echo "✅ Gateway deployed successfully!"
+          echo "🌐 Gateway URL: https://$GATEWAY_URL"
+
+      - name: Test Gateway Health
+        run: |
+          GATEWAY_URL="${{ steps.gateway-url.outputs.gateway_url }}"
+          
+          echo "🧪 Testing gateway endpoints..."
+          
+          # Test Project 1 health (may fail if auth required)
+          echo "Testing: $GATEWAY_URL/p1/health"
+          curl -s -o /dev/null -w "Status: %{http_code}\n" "$GATEWAY_URL/p1/health" || echo "⚠️  Auth may be required"
+          
+          echo "Testing: $GATEWAY_URL/p2/health"
+          curl -s -o /dev/null -w "Status: %{http_code}\n" "$GATEWAY_URL/p2/health" || echo "⚠️  Auth may be required"
+          
+          echo "Testing: $GATEWAY_URL/p3/health"
+          curl -s -o /dev/null -w "Status: %{http_code}\n" "$GATEWAY_URL/p3/health" || echo "⚠️  Auth may be required"
+
+      - name: Summary
+        run: |
+          echo "════════════════════════════════════════════"
+          echo "✅ API Gateway Deployment Complete!"
+          echo "════════════════════════════════════════════"
+          echo ""
+          echo "🌐 Gateway URL:"
+          echo "   ${{ steps.gateway-url.outputs.gateway_url }}"
+          echo ""
+          echo "📍 Endpoints:"
+          echo "   Project 1: ${{ steps.gateway-url.outputs.gateway_url }}/p1"
+          echo "   Project 2: ${{ steps.gateway-url.outputs.gateway_url }}/p2"
+          echo "   Project 3: ${{ steps.gateway-url.outputs.gateway_url }}/p3"
+          echo ""
+          echo "🔐 Authentication: Firebase Auth (if enabled)"
+          echo ""
+          echo "📊 Service URLs:"
+          echo "   Project 1: ${{ steps.get-urls.outputs.project1_url }}"
+          echo "   Project 2: ${{ steps.get-urls.outputs.project2_url }}"
+          echo "   Project 3: ${{ steps.get-urls.outputs.project3_url }}"
+          echo "════════════════════════════════════════════"

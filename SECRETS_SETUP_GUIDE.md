@@ -2,7 +2,7 @@
 
 **Complete step-by-step guide to get every secret and add it to GitHub Actions.**
 
-Time required: **15 minutes**
+Time required: **17 minutes**
 
 ---
 
@@ -115,7 +115,7 @@ gcloud services list --enabled --project=$PROJECT_ID | grep -E "(run|artifact|ga
 
 ---
 
-### STEP 3: Create Service Account for GitHub Actions (5 minutes)
+### STEP 3: Create Service Account for GitHub Actions (7 minutes)
 
 #### 3.1: Create Service Account
 
@@ -168,7 +168,50 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 # Each command will show: "Updated IAM policy for project"
 ```
 
-#### 3.3: Create and Download Service Account Key
+#### 3.3: Create Artifact Registry Repository (2 minutes)
+
+**⚠️ CRITICAL - Do this BEFORE creating the service account key!**
+
+The service account needs a repository to push Docker images to.
+
+```bash
+# Create the Artifact Registry repository
+gcloud artifacts repositories create lean-hub \
+  --repository-format=docker \
+  --location=us-central1 \
+  --description="Docker images for Lean Hub services" \
+  --project=$PROJECT_ID
+
+# You'll see: "Created repository [lean-hub]"
+```
+
+**Grant the service account permission to push images:**
+
+```bash
+# This allows GitHub Actions to push Docker images
+gcloud artifacts repositories add-iam-policy-binding lean-hub \
+  --location=us-central1 \
+  --member="serviceAccount:github-actions@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --role="roles/artifactregistry.writer" \
+  --project=$PROJECT_ID
+
+# You'll see: "Updated IAM policy for repository [lean-hub]"
+```
+
+✅ **Verification:**
+```bash
+# Check the repository was created
+gcloud artifacts repositories list --location=us-central1 --project=$PROJECT_ID
+
+# Check permissions were granted
+gcloud artifacts repositories get-iam-policy lean-hub \
+  --location=us-central1 \
+  --project=$PROJECT_ID
+
+# You should see your service account with artifactregistry.writer role
+```
+
+#### 3.4: Create and Download Service Account Key
 
 ```bash
 # Create key and save to file
@@ -226,7 +269,7 @@ rm github-actions-key.json
 
 ---
 
-### STEP 4: Set Up Firebase (5 minutes)
+### STEP 5: Set Up Firebase (5 minutes)
 
 #### 4.1: Create Firebase Project
 
@@ -338,7 +381,7 @@ Add each secret by clicking **"New repository secret"** for each one:
 
 ---
 
-### STEP 5: Verify All Secrets Collected
+### STEP 6: Verify All Secrets Collected
 
 **Check you have all 8 secrets:**
 

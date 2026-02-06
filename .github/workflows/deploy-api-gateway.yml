@@ -65,6 +65,7 @@ jobs:
           sed "s|https://project-3-placeholder|${{ steps.get-urls.outputs.project3_url }}|g" \
               > /tmp/api-gateway-config-updated.yaml
           
+              
           echo "✅ API Gateway config updated"
           echo "=== Full updated config ==="
           cat /tmp/api-gateway-config-updated.yaml

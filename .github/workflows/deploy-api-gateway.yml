@@ -41,30 +41,24 @@ jobs:
       - name: Get Service URLs
         id: get-urls
         run: |
-          # Use JSON format for reliable parsing
-          echo "🔍 Fetching service URLs using JSON format..."
+          # Parse default table output - it's the ONLY format that shows correct URLs
+          echo "🔍 Fetching service URLs from table output..."
           
-          # Get URLs using JSON format (more reliable than text parsing)
+          # Parse table output with awk (find SERVICE line, then extract URL line after it)
           PROJECT1_URL=$(gcloud run services list \
             --region=${{ env.GCP_REGION }} \
-            --project=${{ env.GCP_PROJECT_ID }} \
-            --format="json" \
-            --filter="metadata.name=project-1" 2>/dev/null | \
-            python3 -c "import sys, json; data = json.load(sys.stdin); print(data[0]['status']['url'] if data else '')" || echo "")
+            --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null | \
+            awk '/SERVICE: project-1/{found=1} found && /URL:/{print $2; exit}' || echo "")
           
           PROJECT2_URL=$(gcloud run services list \
             --region=${{ env.GCP_REGION }} \
-            --project=${{ env.GCP_PROJECT_ID }} \
-            --format="json" \
-            --filter="metadata.name=project-2-rag" 2>/dev/null | \
-            python3 -c "import sys, json; data = json.load(sys.stdin); print(data[0]['status']['url'] if data else '')" || echo "")
+            --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null | \
+            awk '/SERVICE: project-2-rag/{found=1} found && /URL:/{print $2; exit}' || echo "")
           
           PROJECT3_URL=$(gcloud run services list \
             --region=${{ env.GCP_REGION }} \
-            --project=${{ env.GCP_PROJECT_ID }} \
-            --format="json" \
-            --filter="metadata.name=project-3" 2>/dev/null | \
-            python3 -c "import sys, json; data = json.load(sys.stdin); print(data[0]['status']['url'] if data else '')" || echo "")
+            --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null | \
+            awk '/SERVICE: project-3/{found=1} found && /URL:/{print $2; exit}' || echo "")
           
           # Validate URLs are not empty
           if [ -z "$PROJECT1_URL" ] || [ "$PROJECT1_URL" = "" ]; then

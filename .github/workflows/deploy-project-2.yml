@@ -102,7 +102,7 @@ jobs:
             --region ${{ env.REGION }} \
             --ingress internal \
             --allow-unauthenticated \
-            --set-env-vars SHARED_LIB_VERSION=${{ steps.lib-version.outputs.version }} \
+            --set-env-vars GCP_PROJECT_ID=${{ env.GCP_PROJECT_ID }},SHARED_LIB_VERSION=${{ steps.lib-version.outputs.version }} \
             --gpu 1 \
             --gpu-type nvidia-l4 \
             --max-instances 10 \

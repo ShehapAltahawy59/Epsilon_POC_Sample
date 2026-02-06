@@ -84,25 +84,25 @@ jobs:
         run: |
           docker build \
             -f project_3/Dockerfile \
-            -t ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }} \
-            -t ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:latest \
+            -t ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+            -t ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.SERVICE_NAME }}:latest \
             --build-arg SHARED_LIB_VERSION=${{ steps.lib-version.outputs.version }} \
             .
 
       - name: Push to Artifact Registry
         run: |
-          docker push ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }}
-          docker push ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:latest
+          docker push ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          docker push ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.SERVICE_NAME }}:latest
 
       - name: Deploy to Cloud Run
         run: |
-          gcloud run deploy ${{ env.SERVICE }} \
-            --image ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }} \
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }} \
             --platform managed \
-            --region ${{ env.REGION }} \
+            --region ${{ env.GCP_REGION }} \
             --ingress internal \
             --allow-unauthenticated \
-            --set-env-vars SHARED_LIB_VERSION=${{ steps.lib-version.outputs.version }} \
+            --set-env-vars GCP_PROJECT_ID=${{ env.GCP_PROJECT_ID }},SHARED_LIB_VERSION=${{ steps.lib-version.outputs.version }} \
             --max-instances 10 \
             --min-instances 0 \
             --memory 512Mi \
@@ -111,6 +111,6 @@ jobs:
       - name: Log deployment
         run: |
           echo "✅ Project 3 deployed successfully"
-          echo "📦 Image: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }}"
+          echo "📦 Image: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }}"
           echo "🏷️  Shared Lib Version: ${{ steps.lib-version.outputs.version }}"
-          echo "🌐 Region: ${{ env.REGION }}"
+          echo "🌐 Region: ${{ env.GCP_REGION }}"

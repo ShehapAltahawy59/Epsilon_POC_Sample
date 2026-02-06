@@ -102,7 +102,7 @@ jobs:
             --region ${{ env.GCP_REGION }} \
             --ingress internal \
             --allow-unauthenticated \
-            --set-env-vars SHARED_LIB_VERSION=${{ steps.lib-version.outputs.version }},FIREBASE_API_KEY=${{ env.FIREBASE_API_KEY }},FIREBASE_PROJECT_ID=${{ env.FIREBASE_PROJECT_ID }} \
+            --set-env-vars GCP_PROJECT_ID=${{ env.GCP_PROJECT_ID }},SHARED_LIB_VERSION=${{ steps.lib-version.outputs.version }} \
             --max-instances 10 \
             --min-instances 0 \
             --memory 512Mi \

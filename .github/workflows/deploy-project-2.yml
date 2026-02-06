@@ -100,7 +100,7 @@ jobs:
             --image ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }} \
             --platform managed \
             --region ${{ env.GCP_REGION }} \
-            --ingress internal \
+            --ingress internal-and-cloud-load-balancing \
             --allow-unauthenticated \
             --set-env-vars GCP_PROJECT_ID=${{ env.GCP_PROJECT_ID }},SHARED_LIB_VERSION=${{ steps.lib-version.outputs.version }} \
             --max-instances 2 \

@@ -25,27 +25,26 @@ ENDPOINTS = {
     "Project 1 (via Gateway)": [
         "/p1",
         "/p1/health",
-        "/p1/version",
-        "/p1/lib-info"
+        "/p1/version"
     ],
     "Project 2 (via Gateway)": [
         "/p2",
         "/p2/health",
-        "/p2/version",
-        "/p2/lib-info"
+        "/p2/version"
     ],
     "Project 3 (via Gateway)": [
         "/p3",
         "/p3/health",
         "/p3/version",
-        "/p3/lib-info"
+        "/p3/status"
     ]
 }
 
 # Direct Cloud Run URLs (for comparison)
 DIRECT_URLS = {
-    "Project 1 (Direct)": "https://project-1-lkkj3foq7q-uc.a.run.app",
-    "Project 3 (Direct)": "https://project-3-lkkj3foq7q-uc.a.run.app"
+    "Project 1 (Direct)": "https://project-1-494821814955.us-central1.run.app",
+    "Project 2 (Direct)": "https://project-2-rag-494821814955.us-central1.run.app",
+    "Project 3 (Direct)": "https://project-3-494821814955.us-central1.run.app"
 }
 
 # Colors for terminal output

@@ -87,6 +87,17 @@ paths:
         '200':
           description: Query results
 
+  /p2/version:
+    get:
+      summary: Project 2 Version
+      operationId: project2Version
+      x-google-backend:
+        address: https://project-2-rag-placeholder/version
+        path_translation: CONSTANT_ADDRESS
+      responses:
+        '200':
+          description: Version info
+
   /p2/index:
     post:
       summary: Index Documents
@@ -119,6 +130,17 @@ paths:
       responses:
         '200':
           description: Healthy
+
+  /p3/version:
+    get:
+      summary: Project 3 Version
+      operationId: project3Version
+      x-google-backend:
+        address: https://project-3-placeholder/version
+        path_translation: CONSTANT_ADDRESS
+      responses:
+        '200':
+          description: Version info
   
   /p3/status:
     get:

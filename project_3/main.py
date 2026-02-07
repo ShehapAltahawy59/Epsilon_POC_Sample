@@ -36,12 +36,14 @@ async def add_trace_context(request: Request, call_next):
     Extract or generate correlation ID and trace context.
     Adds correlation_id to request state for use in endpoints.
     """
+    # Extract Cloud Trace context and set env var for JSONLogger
+    trace_header = request.headers.get("X-Cloud-Trace-Context", "")
+    if trace_header:
+        os.environ['HTTP_X_CLOUD_TRACE_CONTEXT'] = trace_header
+    trace_id = extract_trace_id_from_header(trace_header) if trace_header else None
+    
     # Extract or generate correlation ID
     correlation_id = request.headers.get("X-Correlation-ID") or generate_correlation_id()
-    
-    # Extract Cloud Trace context
-    trace_header = request.headers.get("X-Cloud-Trace-Context")
-    trace_id = extract_trace_id_from_header(trace_header) if trace_header else None
     
     # Store in request state
     request.state.correlation_id = correlation_id

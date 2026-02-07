@@ -147,13 +147,12 @@ class JSONLogger:
             "service": self.service_name,
             "correlation_id": correlation_id,
             **trace_context,  # Add trace/span IDs for Cloud Trace correlation
-            **kwargs
         }
         
-        # Remove duplicate correlation_id from kwargs if present
-        log_entry.pop('correlation_id', None)
-        if 'correlation_id' in kwargs:
-            log_entry['correlation_id'] = correlation_id
+        # Add extra fields from kwargs (skip correlation_id to avoid overwriting)
+        for key, value in kwargs.items():
+            if key != 'correlation_id':
+                log_entry[key] = value
         
         return json.dumps(log_entry)
     
@@ -414,7 +413,7 @@ def get_lib_info() -> Dict[str, Any]:
     Used for surgical versioning and dependency tracking.
     """
     return {
-        "version": "3.0.0",
+        "version": "3.1.0",
         "library": "shared_libs",
         "description": "Lean Hub Shared Utilities",
         "timestamp": datetime.utcnow().isoformat()

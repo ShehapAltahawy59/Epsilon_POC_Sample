@@ -98,7 +98,7 @@ You: git push origin main
 
 After one-time GitHub secrets setup (~15 min), **everything deploys automatically!**
 
-**What's Manual?** Only adding secrets to GitHub (see [AUTOMATION_CHECKLIST.md](AUTOMATION_CHECKLIST.md))
+**What's Manual?** Only adding secrets to GitHub 
 
 **What's Automatic?**
 - ✅ Service builds & deployments (CI/CD)
@@ -187,7 +187,6 @@ git push origin main
 │   ├── monitoring-dashboard.tf
 │   └── MONITORING_SETUP.md
 │
-└── SURGICAL_UPDATE_TEST.md  # Proof of concept test
 ```
 
 ## The Surgical Update Test
@@ -201,7 +200,6 @@ Proves that you can update shared libraries for one service without affecting ot
    - Project 2 shows v1.0.0 ✅
    - Project 3 shows v1.0.0 ✅
 
-See [SURGICAL_UPDATE_TEST.md](SURGICAL_UPDATE_TEST.md) for detailed instructions.
 
 ## API Endpoints
 

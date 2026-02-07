@@ -23,7 +23,6 @@ You: git push origin main
 ```
 
 **What's manual?** Only adding secrets to GitHub (one-time, 15 min)  
-**What's automatic?** Everything else! See [AUTOMATION_CHECKLIST.md](AUTOMATION_CHECKLIST.md)
 
 ## Architecture Overview
 
@@ -91,7 +90,7 @@ You: git push origin main
 - **Centralized monitoring dashboard** for all services
 - **Custom metrics** for request tracking and performance
 - **Alert policies** for proactive issue detection
-- See [OBSERVABILITY.md](OBSERVABILITY.md) for details
+
 
 ## Quick Start
 
@@ -148,29 +147,8 @@ git push origin main
 - GitHub Secrets = Sensitive credentials (never committed)
 - Dockerfiles = Version pinning per service
 
-**See [SECRETS_MANAGEMENT.md](SECRETS_MANAGEMENT.md) for complete setup guide.**
+**See [SECRETS_SETUP_GUIDE.md](SECRETS_SETUP_GUIDE.md) for complete setup guide.**
 
-### Local Development (Optional)
-
-```bash
-# Deploy all services
-cd infrastructure
-./deploy-all-services.sh
-
-# Deploy API Gateway
-./deploy-gateway.sh
-```
-
-### Test Locally
-
-```bash
-# Test Project 1
-cd project_1
-pip install -r requirements.txt
-python main.py
-
-# Visit http://localhost:8080
-```
 
 ## Project Structure
 
@@ -205,8 +183,6 @@ python main.py
 ├── infrastructure/          # IaC and deployment
 │   ├── api-gateway-config.yaml
 │   ├── deploy-all-services.sh
-│   ├── deploy-gateway.sh
-│   ├── deploy-monitoring.sh      # 📊 Monitoring setup
 │   ├── dashboard-config.json
 │   ├── monitoring-dashboard.tf
 │   └── MONITORING_SETUP.md
@@ -318,16 +294,6 @@ Logs include:
 - Shared library version
 - Custom metadata
 
-## Local Development
-
-```bash
-# Run any project locally
-cd project_1  # or project_2, project_3
-pip install -r requirements.txt
-python main.py
-
-# Access at http://localhost:8080
-```
 
 ## Contributing
 
@@ -346,44 +312,3 @@ This is a POC/sample project demonstrating the Lean Hub architecture. Feel free 
 4. **Unified Gateway**: One URL for everything
 5. **GPU Optimization**: Right-size infrastructure (L4 > A100 for most workloads)
 6. **Complete Observability**: JSON logs + correlation IDs + Cloud Trace + centralized dashboard
-
-## Documentation
-
-### Getting Started
-- **[AUTOMATION_CHECKLIST.md](AUTOMATION_CHECKLIST.md)** - ⭐ What's automatic vs manual (15 min setup!)
-- **[SECRETS_MANAGEMENT.md](SECRETS_MANAGEMENT.md)** - GitHub secrets configuration guide
-
-### Core Features
-- **[HOW_VERSION_PINNING_WORKS.md](HOW_VERSION_PINNING_WORKS.md)** - Git-based surgical versioning
-- **[SURGICAL_UPDATE_TEST.md](SURGICAL_UPDATE_TEST.md)** - Test surgical updates work
-- **[OBSERVABILITY.md](OBSERVABILITY.md)** - Logging, tracing, monitoring
-
-### Advanced
-- **[infrastructure/MONITORING_SETUP.md](infrastructure/MONITORING_SETUP.md)** - Monitoring deep dive
-- **[OBSERVABILITY_IMPLEMENTATION.md](OBSERVABILITY_IMPLEMENTATION.md)** - Implementation details
-
-## Next Steps
-
-1. **Review Automation**: See what's automatic in [AUTOMATION_CHECKLIST.md](AUTOMATION_CHECKLIST.md)
-2. **Set Up Secrets** (15 min): Configure GitHub Actions secrets → [SECRETS_MANAGEMENT.md](SECRETS_MANAGEMENT.md)
-3. **Push to GitHub**: Automatic deployment happens!
-4. **Verify Deployment**: Check GitHub Actions, Cloud Run services, monitoring dashboard
-5. **Test Surgical Updates**: Prove independence → [SURGICAL_UPDATE_TEST.md](SURGICAL_UPDATE_TEST.md)
-6. **Add Your Services**: Use project templates
-7. **Customize Shared Libraries**: Add your common utilities
-
-## Support
-
-For questions or issues:
-- Review individual project README files
-- Check infrastructure documentation
-- See surgical update test case
-- Review GitHub Actions workflows
-
----
-
-**Built with**: Python, FastAPI, Docker, GCP Cloud Run, API Gateway, Firebase, GitHub Actions
-
-**Philosophy**: Minimal maintenance, aggressive cost optimization, surgical versioning
-
-**License**: Use freely for your own projects

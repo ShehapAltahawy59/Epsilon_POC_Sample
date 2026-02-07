@@ -120,7 +120,7 @@ Required secrets:
 - FIREBASE_PROJECT_ID   = "your-firebase-project"
 - FIREBASE_AUTH_DOMAIN  = "your-project.firebaseapp.com"
 
-See: SECRETS_MANAGEMENT.md for step-by-step guide
+
 ```
 
 **Step 2: Push to GitHub**
@@ -263,14 +263,6 @@ The workflows will automatically:
 4. Deploy to Cloud Run
 5. Update only affected services
 
-## Firebase Authentication
-
-Follow the setup guide in [infrastructure/firebase-auth-setup.md](infrastructure/firebase-auth-setup.md) to:
-
-1. Create Firebase project
-2. Enable authentication providers
-3. Configure API Gateway
-4. Integrate with your client apps
 
 ## Monitoring & Observability
 

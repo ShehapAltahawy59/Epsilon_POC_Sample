@@ -54,6 +54,17 @@ paths:
         '200':
           description: Version info
 
+  /p1/call-p2:
+    get:
+      summary: Project 1 Call Project 2
+      operationId: project1CallP2
+      x-google-backend:
+        address: https://project-1-placeholder/call-p2
+        path_translation: CONSTANT_ADDRESS
+      responses:
+        '200':
+          description: Project 1 downstream call result
+
   /p2:
     get:
       summary: Project 2 RAG Root

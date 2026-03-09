@@ -78,6 +78,31 @@ Reasons:
 
 Cloud Run provides the best time-to-operational-production ratio for this architecture.
 
+## 5.1) Why Cloud Run + Docker Instead of Kubernetes
+
+Kubernetes was evaluated, but not selected for this phase because the platform goals prioritize delivery speed, operational simplicity, and low idle cost over maximum orchestration flexibility.
+
+Why Cloud Run + Docker was chosen:
+
+- Container portability retained: Docker images provide the same packaging, immutability, and dependency isolation benefits regardless of runtime target.
+- No cluster control-plane management: no node pools, scheduler tuning, upgrades, CNI policy management, or cluster lifecycle operations.
+- Lower operational surface area: fewer failure domains to diagnose compared to pods/nodes/controllers/ingress stacks.
+- Faster release cycle: build and deploy path is shorter (image -> revision) without Kubernetes manifests, Helm/Kustomize layering, or admission policy orchestration.
+- Native scale-to-zero economics: Cloud Run minimizes idle spend automatically for intermittent workloads.
+- Simpler security model for this scope: service IAM + gateway policy is sufficient without introducing full Kubernetes RBAC/network-policy/service-mesh complexity.
+- Team efficiency: engineering time is spent on service behavior and observability rather than platform administration.
+
+Why Kubernetes was deferred (not rejected permanently):
+
+- Kubernetes is strongest when workloads require advanced orchestration primitives (daemonsets, statefulsets, custom controllers, complex intra-cluster networking, sidecar/service-mesh patterns at scale).
+- Current Lean Hub workloads are stateless HTTP services with straightforward routing and managed dependencies, which do not justify early Kubernetes overhead.
+- Introducing Kubernetes too early would increase cognitive and operational load without proportional reliability or performance gains for current traffic and architecture complexity.
+
+Decision boundary:
+
+- If requirements evolve toward multi-region active-active cluster orchestration, dense bin-packing of heterogeneous workloads, deep mesh policy control, or extensive custom operators, Kubernetes can become the next-step platform.
+- Until that threshold is reached, Cloud Run + Docker remains the most cost-effective and technically appropriate runtime choice.
+
 ## 6) Why Monorepo + Surgical CI/CD
 
 A monorepo was chosen to keep shared contracts, services, and infrastructure in one transactional change space.
@@ -219,3 +244,294 @@ The architecture choices are optimized for:
 
 In short: the platform is intentionally designed to maximize engineering throughput while reducing operational and security risk in a multi-service cloud environment.
 
+## 17) Slide-Ready Presentation Structure
+
+This section is a deck blueprint you can copy directly into presentation slides.
+
+### Slide 1: Title and Context
+
+**Title:** Lean Hub Architecture Decisions  
+**Subtitle:** Why this platform design was chosen, what trade-offs were accepted, and how it scales.
+
+**Key message:**
+- The architecture is intentionally optimized for speed, reliability, security, and cost efficiency in a multi-service cloud model.
+
+**Suggested visual:**
+- One high-level architecture diagram (gateway, three services, shared libs, observability stack).
+
+### Slide 2: Problem Statement
+
+**Title:** What We Needed to Solve
+
+**Key message:**
+- Deliver independent services quickly without sacrificing observability, security, or operational control.
+
+**Technical drivers:**
+- Heterogeneous workloads (simple APIs + heavier RAG service).
+- Need for independent deployment and rollback.
+- Need for stable external API despite backend change.
+- Need for strong production telemetry from day one.
+
+**Suggested visual:**
+- Four requirement pillars: Delivery Speed, Isolation, Security, Observability.
+
+### Slide 3: Why Not On-Premises
+
+**Title:** Rejected Option: On-Prem
+
+**Key message:**
+- On-prem introduces platform-heavy work that slows product delivery.
+
+**Technical reasons:**
+- Capacity planning must cover peak demand (idle waste).
+- Accelerator lifecycle (GPU procurement, scheduling, replacement) is heavy.
+- Extra control planes required for ingress, auth, certs, and routing.
+- Full ownership of reliability stack (patching, HA, DR, node lifecycle).
+- Full ownership of telemetry stack and retention governance.
+
+**Suggested visual:**
+- "Engineering focus split" chart: Product vs Platform effort.
+
+### Slide 4: Why GCP
+
+**Title:** Cloud Platform Selection Rationale
+
+**Key message:**
+- GCP gave managed primitives aligned with our architecture boundaries.
+
+**Technical fit:**
+- Cloud Run: stateless service runtime with autoscaling.
+- API Gateway: centralized auth/routing policy.
+- Firebase Auth: token ecosystem + gateway validation support.
+- Logging/Trace/Monitoring: unified operational telemetry.
+- IAM + service accounts: least-privilege automation model.
+- Artifact Registry: immutable image provenance.
+
+**Suggested visual:**
+- Capability-to-requirement matrix.
+
+### Slide 5: Why Microservices
+
+**Title:** Service Decomposition Strategy
+
+**Key message:**
+- Workload and release independence justified service separation.
+
+**Benefits:**
+- Independent scaling envelopes.
+- Smaller rollback blast radius.
+- Fault containment between domains.
+- Team and release autonomy.
+
+**Trade-off:**
+- Higher distributed-system complexity accepted and mitigated via automation + observability.
+
+### Slide 6: Why API Gateway
+
+**Title:** Single Entry Point Design
+
+**Key message:**
+- Gateway centralizes identity, routing, and policy while decoupling clients from backend churn.
+
+**Technical outcomes:**
+- Stable external contract.
+- Centralized JWT validation.
+- Path-based backend routing.
+- Easier service URL rotation handling.
+
+**Suggested visual:**
+- Before/after diagram: direct service exposure vs gateway front-door.
+
+### Slide 7: Why Cloud Run + Docker (Not Kubernetes)
+
+**Title:** Runtime Decision Boundary
+
+**Key message:**
+- Cloud Run + Docker provides container immutability and portability without Kubernetes control-plane overhead.
+
+**Why now:**
+- Faster build-to-live path.
+- No cluster ops (node pools/upgrades/scheduler networking complexity).
+- Scale-to-zero cost profile.
+- Lower SRE cognitive load for current requirements.
+
+**When to revisit Kubernetes:**
+- Advanced orchestration needs (custom controllers, deep mesh policy, dense heterogeneous scheduling, complex stateful operational model).
+
+### Slide 8: Why Monorepo + Surgical CI/CD
+
+**Title:** Delivery Pipeline Strategy
+
+**Key message:**
+- Keep shared contracts and services in one change graph while deploying only what changed.
+
+**Technical mechanism:**
+- Path-scoped workflow triggers.
+- Service-specific rebuild/deploy.
+- Reduced pipeline duration and lower deployment risk.
+
+**Operational effect:**
+- Faster feedback loops.
+- Fewer unnecessary deployments.
+- Better forensic traceability of cross-service changes.
+
+### Slide 9: Why Shared Library Pinning
+
+**Title:** Dependency Stability Model
+
+**Key message:**
+- Service-level pinning prevents accidental dependency drift.
+
+**Technical benefits:**
+- Reproducible builds.
+- Controlled adoption by service.
+- Deterministic rollback.
+- Safer canary adoption patterns for shared utilities.
+
+**Important caveat:**
+- Service code and pinned shared version must be compatible; new imports require pin bumps.
+
+### Slide 10: Why Git Tags for Shared Library Releases
+
+**Title:** Immutable Release Anchors
+
+**Key message:**
+- Tags provide immutable references that map deployed images to exact dependency state.
+
+**Technical advantages:**
+- Provenance and auditability.
+- Repeatable rebuild behavior.
+- Clear release boundaries for incident analysis.
+
+### Slide 11: Security Architecture
+
+**Title:** Defense-in-Depth Controls
+
+**Key message:**
+- Security posture is layered so no single control is a hard dependency.
+
+**Layers:**
+- IAM service identity and least privilege.
+- Gateway-level authentication policy.
+- Runtime invocation controls.
+- Secret isolation in CI.
+- Audit logs for privileged operations.
+
+**Suggested visual:**
+- Layered shield diagram.
+
+### Slide 12: Observability Strategy
+
+**Title:** Logs, Traces, Metrics — Complementary Roles
+
+**Key message:**
+- Telemetry is designed for both rapid detection and deep diagnosis.
+
+**Roles:**
+- Logs: semantic event evidence and context.
+- Traces: latency topology and critical path.
+- Metrics: aggregate trend and SLO health.
+
+**Correlation model:**
+- Trace ID for request-span topology.
+- Correlation ID for cross-boundary transaction stitching.
+
+### Slide 13: Why Correlation ID + Trace ID
+
+**Title:** Non-Redundant Identifiers
+
+**Key message:**
+- Trace IDs and correlation IDs solve different observability problems.
+
+**Trace ID is best for:**
+- Span timing analysis within traced request graphs.
+
+**Correlation ID is best for:**
+- Reconstructing end-to-end business workflows across multiple requests/asynchronous boundaries.
+
+### Slide 14: Monitoring Dashboard Design
+
+**Title:** Operational Visibility at a Glance
+
+**Key message:**
+- Dashboard standardization reduces time-to-detect and accelerates incident triage.
+
+**What operators need first:**
+- Traffic level and error profile.
+- Latency behavior.
+- Runtime capacity indicators.
+- Resource utilization and cost signals.
+
+### Slide 15: Delivery Sequence Rationale
+
+**Title:** Why the Rollout Order Matters
+
+**Key message:**
+- Sequence is designed to eliminate dependency deadlocks and reduce rework.
+
+**Order and reason:**
+1. Foundation + IAM first (enables all automation).
+2. Secrets before CI execution (avoid auth failures).
+3. Services before gateway finalization (valid route targets).
+4. Observability after runtime signal exists.
+5. Version pinning before broad shared-lib rollout.
+
+### Slide 16: Trade-Offs and Risk Register
+
+**Title:** What We Accepted Deliberately
+
+**Accepted trade-offs:**
+- More distributed complexity for better service independence.
+- More pipeline logic for lower release risk.
+- More version governance for deterministic builds.
+
+**Risk controls:**
+- Automation guardrails.
+- Immutable tagging.
+- Structured telemetry and auditability.
+
+### Slide 17: Measurable Outcomes
+
+**Title:** Expected Engineering and Operations Outcomes
+
+**Outcomes to highlight:**
+- Reduced deployment blast radius.
+- Faster mean time to detect and isolate issues.
+- Stronger release reproducibility.
+- Improved developer throughput.
+- Better idle-cost profile for bursty workloads.
+
+### Slide 18: Future Evolution Path
+
+**Title:** Architecture Decision Horizon
+
+**Near-term focus:**
+- Harden SLOs/alerts and incident playbooks.
+- Expand tracing depth and async propagation coverage.
+- Improve dependency release governance.
+
+**Potential platform pivot triggers:**
+- Need for advanced orchestration primitives.
+- Multi-region active-active complexity.
+- Mesh-level policy requirements at larger scale.
+
+### Slide 19: Executive Conclusion
+
+**Title:** Why This Architecture Is the Right Fit Now
+
+**Final message:**
+- The platform balances speed, safety, and cost with strong technical controls.
+- It is intentionally pragmatic: managed where possible, explicit where critical.
+- It preserves a clean migration path to more complex orchestration only when justified by scale and requirement complexity.
+
+## 18) Presenter Notes (Concise Talking Script)
+
+Use this as a short verbal script while presenting:
+
+- "We chose cloud over on-prem to avoid spending engineering cycles on platform plumbing instead of product delivery."
+- "We chose managed components that map directly to our boundaries: runtime, gateway, identity, artifacts, and telemetry."
+- "Microservices were selected for operational independence, and we deliberately paid that complexity cost by investing in CI/CD and observability."
+- "Cloud Run + Docker gave us immutable containers without cluster operations overhead."
+- "Shared library pinning and tag immutability are central to deterministic releases and safe selective upgrades."
+- "Trace IDs and correlation IDs are both required because they answer different operational questions."
+- "This architecture is intentionally designed for current scale and includes a clear threshold for when Kubernetes becomes justified."

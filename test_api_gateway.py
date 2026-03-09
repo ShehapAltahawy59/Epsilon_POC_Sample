@@ -25,7 +25,8 @@ ENDPOINTS = {
     "Project 1 (via Gateway)": [
         "/p1",
         "/p1/health",
-        "/p1/version"
+        "/p1/version",
+        "/p1/call-p2"
     ],
     "Project 2 (via Gateway)": [
         "/p2",

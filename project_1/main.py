@@ -8,6 +8,10 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 import sys
 import os
+import json
+import asyncio
+import urllib.request
+import urllib.error
 
 # Add shared_libs to path for import
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -108,6 +112,76 @@ async def version(request: Request):
                 "correlation_id": correlation_id
             }
         )
+    )
+
+@app.get("/call-p2")
+async def call_project2(request: Request):
+    """
+    Demo endpoint to validate cross-service correlation propagation.
+    Calls Project 2 /health and forwards correlation + trace headers.
+    """
+    correlation_id = getattr(request.state, "correlation_id", generate_correlation_id())
+    trace_header = request.headers.get("X-Cloud-Trace-Context", "")
+    project2_url = os.getenv(
+        "PROJECT_2_URL",
+        "https://project-2-rag-494821814955.us-central1.run.app/health",
+    )
+
+    headers = {
+        "X-Correlation-ID": correlation_id,
+    }
+    if trace_header:
+        headers["X-Cloud-Trace-Context"] = trace_header
+
+    logger.info(
+        "Calling Project 2 from Project 1",
+        correlation_id=correlation_id,
+        target_url=project2_url,
+        request="call-p2",
+    )
+
+    req = urllib.request.Request(project2_url, headers=headers, method="GET")
+
+    def _do_request():
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                body = resp.read().decode("utf-8")
+                return resp.status, body
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", errors="ignore")
+            return e.code, body
+        except Exception as e:
+            return 500, str(e)
+
+    status_code, body = await asyncio.to_thread(_do_request)
+
+    parsed_body = body
+    try:
+        parsed_body = json.loads(body)
+    except Exception:
+        pass
+
+    logger.info(
+        "Received response from Project 2",
+        correlation_id=correlation_id,
+        downstream_status=status_code,
+        request="call-p2",
+    )
+
+    return JSONResponse(
+        status_code=200,
+        content=format_response(
+            data={
+                "source_service": "project_1",
+                "target_service": "project_2_rag",
+                "target_url": project2_url,
+                "downstream_status": status_code,
+                "downstream_response": parsed_body,
+                "correlation_id": correlation_id,
+                "trace_header_forwarded": bool(trace_header),
+            },
+            message="Project 1 called Project 2",
+        ),
     )
 
 if __name__ == "__main__":

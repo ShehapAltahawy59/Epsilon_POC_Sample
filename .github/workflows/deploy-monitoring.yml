@@ -37,6 +37,15 @@ jobs:
       - name: Deploy Dashboard via gcloud
         run: |
           echo "📊 Creating monitoring dashboard..."
+          DASHBOARD_CONFIG_PATH="${GITHUB_WORKSPACE}/infrastructure/monitoring/dashboard-config.json"
+          echo "Workspace: ${GITHUB_WORKSPACE}"
+          echo "Config path: ${DASHBOARD_CONFIG_PATH}"
+          echo "Listing infrastructure/monitoring:"
+          ls -la "${GITHUB_WORKSPACE}/infrastructure/monitoring" || true
+          if [ ! -f "${DASHBOARD_CONFIG_PATH}" ]; then
+            echo "❌ Dashboard config file not found: ${DASHBOARD_CONFIG_PATH}"
+            exit 2
+          fi
           
           # Check if dashboard already exists
           EXISTING=$(gcloud monitoring dashboards list \
@@ -53,7 +62,7 @@ jobs:
           
           # Create dashboard
           gcloud monitoring dashboards create \
-            --config-from-file=infrastructure/monitoring/dashboard-config.json \
+            --config-from-file="${DASHBOARD_CONFIG_PATH}" \
             --project=${{ secrets.GCP_PROJECT_ID }}
           
           echo "✅ Dashboard created successfully!"

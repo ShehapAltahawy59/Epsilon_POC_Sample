@@ -8,17 +8,23 @@ import requests
 import json
 from datetime import datetime
 import os
+import sys
+
+def env_or_default(key, default):
+    value = os.getenv(key)
+    if value is None or str(value).strip() == "":
+        return default
+    return value
 
 # Configuration
-GATEWAY_URL = "https://lean-hub-gateway-6bbg4rzf.uc.gateway.dev"
+GATEWAY_URL = env_or_default("GATEWAY_URL", "https://lean-hub-gateway-6bbg4rzf.uc.gateway.dev")
 
 # Firebase configuration
-FIREBASE_API_KEY = "AIzaSyArB51Zp5n0tsHOa7-KRzmLheHSMciTyus"  # Your Firebase Web API Key
-FIREBASE_AUTH_URL = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_API_KEY}"
+FIREBASE_API_KEY = env_or_default("FIREBASE_API_KEY", "AIzaSyArB51Zp5n0tsHOa7-KRzmLheHSMciTyus")
 
 # User credentials
-FIREBASE_EMAIL = "shehapkhalil62@gmail.com"
-FIREBASE_PASSWORD = "123456"
+FIREBASE_EMAIL = env_or_default("FIREBASE_EMAIL", "shehapkhalil62@gmail.com")
+FIREBASE_PASSWORD = env_or_default("FIREBASE_PASSWORD", "123456")
 
 # Test endpoints
 ENDPOINTS = {
@@ -38,14 +44,16 @@ ENDPOINTS = {
         "/p3/health",
         "/p3/version",
         "/p3/status"
-    ],
-    "Project 4 (via Gateway)": [
+    ]
+}
+
+if os.getenv("ENABLE_PROJECT4_TESTS", "false").lower() == "true":
+    ENDPOINTS["Project 4 (via Gateway)"] = [
         "/p4",
         "/p4/health",
         "/p4/version",
         "/p4/status"
     ]
-}
 
 # Direct Cloud Run URLs (for comparison)
 
@@ -230,6 +238,11 @@ def run_tests(auth_token=None):
         print(f"{status_icon} {Colors.BOLD}{project}:{Colors.END} {successful}/{total} passed")
     
     print()
+    all_passed = all(
+        all(item["result"]["success"] for item in project_results)
+        for project_results in results.values()
+    )
+    return all_passed
 
 def main():
     """Main function"""
@@ -244,13 +257,12 @@ def main():
     
     if firebase_token:
         # Test Gateway endpoints with authentication
-        run_tests(auth_token=firebase_token)
-        
-        
+        all_passed = run_tests(auth_token=firebase_token)
+        return 0 if all_passed else 1
     else:
         print(f"\n{Colors.YELLOW}⚠ Proceeding without authentication (expect 401 errors){Colors.END}")
-        # Test without authentication to see the behavior
-        run_tests()
+        all_passed = run_tests()
+        return 0 if all_passed else 1
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

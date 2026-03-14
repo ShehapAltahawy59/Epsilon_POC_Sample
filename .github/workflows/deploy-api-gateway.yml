@@ -131,6 +131,18 @@ jobs:
           echo "Testing: $GATEWAY_URL/p3/health"
           curl -s -o /dev/null -w "Status: %{http_code}\n" "$GATEWAY_URL/p3/health" || echo "⚠️  Auth may be required"
 
+      - name: Run API Gateway test suite (must pass)
+        env:
+          GATEWAY_URL: ${{ steps.gateway-url.outputs.gateway_url }}
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_EMAIL: ${{ secrets.FIREBASE_TEST_EMAIL }}
+          FIREBASE_PASSWORD: ${{ secrets.FIREBASE_TEST_PASSWORD }}
+          ENABLE_PROJECT4_TESTS: "false"
+        run: |
+          echo "🧪 Running test_api_gateway.py against $GATEWAY_URL"
+          python3 -m pip install --quiet requests
+          python3 test_api_gateway.py
+
       - name: Summary
         run: |
           echo "════════════════════════════════════════════"

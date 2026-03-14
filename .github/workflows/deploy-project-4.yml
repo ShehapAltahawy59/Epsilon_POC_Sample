@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'project_1/**'
+      - 'project_4/**'
   workflow_dispatch:
 
 jobs:
@@ -12,11 +12,11 @@ jobs:
     uses: ./.github/workflows/reusable-deploy-project.yml
     secrets: inherit
     with:
-      deployment_name: Build and Deploy Project 1
-      project_path: project_1
-      service_name: project-1
-      dockerfile_path: project_1/Dockerfile
-      shared_lib_version_file: project_1/shared_lib_version
+      deployment_name: Build and Deploy Project 4
+      project_path: project_4
+      service_name: project-4
+      dockerfile_path: project_4/Dockerfile
+      shared_lib_version_file: project_4/shared_lib_version
       max_instances: "10"
       min_instances: "0"
       memory: 512Mi

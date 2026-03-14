@@ -173,15 +173,24 @@ git push origin main
 │   ├── Dockerfile           # Pinned to v1.0.0
 │   └── requirements.txt
 │
+├── project_template/        # Reusable starter for project_5+
+│   ├── main.py
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   └── shared_lib_version
+│
 ├── .github/workflows/       # 🤖 Automated CI/CD
 │   ├── deploy-project-1.yml
 │   ├── deploy-project-2.yml
 │   ├── deploy-project-3.yml
+│   ├── reusable-deploy-project.yml
 │   ├── deploy-monitoring.yml    # 📊 Auto-deploys dashboard
 │   └── tag-shared-libs.yml
 │
 ├── infrastructure/          # IaC and deployment
 │   ├── api-gateway-config.yaml
+│   ├── services-registry.json    # Single source for gateway routes/services
+│   ├── generate_api_gateway_config.py
 │   ├── deploy-all-services.sh
 │   ├── dashboard-config.json
 │   ├── monitoring-dashboard.tf
@@ -283,6 +292,17 @@ Logs include:
 - Message
 - Shared library version
 - Custom metadata
+
+## Add a New Project Fast
+
+Use the standardized onboarding flow:
+
+- Copy `project_template/` -> new folder (for example `project_5/`)
+- Add one thin workflow wrapper using `reusable-deploy-project.yml`
+- Register service routes in `infrastructure/services-registry.json`
+- Run project deploy, then manual gateway deploy
+
+See `NEW_PROJECT_CHECKLIST.md` for full step-by-step.
 
 
 ## Contributing

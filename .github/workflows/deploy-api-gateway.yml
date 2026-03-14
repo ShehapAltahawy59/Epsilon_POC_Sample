@@ -31,78 +31,18 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Get Service URLs
-        id: get-urls
+      - name: Generate API Gateway Config from Registry
         run: |
-          echo "🔍 Fetching service URLs..."
-          
-          # Debug: Show raw output to understand format
-          echo "=== Raw gcloud output ==="
-          gcloud run services list \
-            --region=${{ env.GCP_REGION }} \
-            --project=${{ env.GCP_PROJECT_ID }} || true
-          echo "========================="
-          
-          # Parse table output - URL is in column 4, service name in column 2
-          SERVICES_OUTPUT=$(gcloud run services list \
-            --region=${{ env.GCP_REGION }} \
-            --project=${{ env.GCP_PROJECT_ID }} 2>/dev/null)
-          
-          PROJECT1_URL=$(echo "$SERVICES_OUTPUT" | awk '$2=="project-1" {print $4}')
-          PROJECT2_URL=$(echo "$SERVICES_OUTPUT" | awk '$2=="project-2-rag" {print $4}')
-          PROJECT3_URL=$(echo "$SERVICES_OUTPUT" | awk '$2=="project-3" {print $4}')
-          
-          # Validate URLs are not empty
-          if [ -z "$PROJECT1_URL" ] || [ "$PROJECT1_URL" = "" ]; then
-            echo "⚠️  Project 1 URL is empty, keeping placeholder"
-            PROJECT1_URL="https://project-1-placeholder"
-          fi
-          if [ -z "$PROJECT2_URL" ] || [ "$PROJECT2_URL" = "" ]; then
-            echo "⚠️  Project 2 URL is empty, keeping placeholder"
-            PROJECT2_URL="https://project-2-rag-placeholder"
-          fi
-          if [ -z "$PROJECT3_URL" ] || [ "$PROJECT3_URL" = "" ]; then
-            echo "⚠️  Project 3 URL is empty, keeping placeholder"
-            PROJECT3_URL="https://project-3-placeholder"
-          fi
-          
-          echo "project1_url=$PROJECT1_URL" >> $GITHUB_OUTPUT
-          echo "project2_url=$PROJECT2_URL" >> $GITHUB_OUTPUT
-          echo "project3_url=$PROJECT3_URL" >> $GITHUB_OUTPUT
-          
-          echo ""
-          echo "✅ Service URLs retrieved:"
-          echo "  Project 1: $PROJECT1_URL"
-          echo "  Project 2: $PROJECT2_URL"
-          echo "  Project 3: $PROJECT3_URL"
-
-      - name: Update API Gateway Config
-        run: |
-          # Use the URLs from previous step (already validated)
-          PROJECT1_URL="${{ steps.get-urls.outputs.project1_url }}"
-          PROJECT2_URL="${{ steps.get-urls.outputs.project2_url }}"
-          PROJECT3_URL="${{ steps.get-urls.outputs.project3_url }}"
-          
-          echo "🔧 Replacing placeholders with actual URLs..."
-          echo "  P1: $PROJECT1_URL"
-          echo "  P2: $PROJECT2_URL"
-          echo "  P3: $PROJECT3_URL"
-          
-          # Create updated config with actual service URLs
-          sed "s|YOUR-FIREBASE-PROJECT-ID|${{ env.FIREBASE_PROJECT_ID }}|g" \
-              infrastructure/api-gateway-config.yaml | \
-          sed "s|https://project-1-placeholder|${PROJECT1_URL}|g" | \
-          sed "s|https://project-2-rag-placeholder|${PROJECT2_URL}|g" | \
-          sed "s|https://project-3-placeholder|${PROJECT3_URL}|g" \
-              > /tmp/api-gateway-config-updated.yaml
-          
-          echo ""
-          echo "✅ API Gateway config updated"
-          echo "=== Validating YAML ==="
-          python3 -c "import yaml; yaml.safe_load(open('/tmp/api-gateway-config-updated.yaml'))" && echo "✓ YAML is valid" || echo "✗ YAML is invalid"
-          echo ""
-          echo "=== First 50 lines of updated config ==="
-          head -50 /tmp/api-gateway-config-updated.yaml
+          echo "🧠 Generating gateway config from infrastructure/services-registry.json ..."
+          python3 infrastructure/generate_api_gateway_config.py \
+            --registry infrastructure/services-registry.json \
+            --output /tmp/api-gateway-config-updated.json \
+            --project-id "${{ env.GCP_PROJECT_ID }}" \
+            --region "${{ env.GCP_REGION }}" \
+            --firebase-project-id "${{ env.FIREBASE_PROJECT_ID }}"
+          echo "✅ Generated OpenAPI config at /tmp/api-gateway-config-updated.json"
+          echo "=== First 60 lines of generated config ==="
+          head -60 /tmp/api-gateway-config-updated.json
 
       - name: Enable Required Services
         run: |
@@ -132,7 +72,7 @@ jobs:
           echo "📦 Creating API Config: $CONFIG_NAME"
           gcloud api-gateway api-configs create $CONFIG_NAME \
             --api=${{ env.API_GATEWAY_API }} \
-            --openapi-spec=/tmp/api-gateway-config-updated.yaml \
+            --openapi-spec=/tmp/api-gateway-config-updated.json \
             --project=${{ env.GCP_PROJECT_ID }} \
             --backend-auth-service-account=github-actions@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com
           
@@ -206,9 +146,4 @@ jobs:
           echo "   Project 3: ${{ steps.gateway-url.outputs.gateway_url }}/p3"
           echo ""
           echo "🔐 Authentication: Firebase Auth (if enabled)"
-          echo ""
-          echo "📊 Service URLs:"
-          echo "   Project 1: ${{ steps.get-urls.outputs.project1_url }}"
-          echo "   Project 2: ${{ steps.get-urls.outputs.project2_url }}"
-          echo "   Project 3: ${{ steps.get-urls.outputs.project3_url }}"
           echo "════════════════════════════════════════════"

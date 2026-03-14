@@ -38,15 +38,16 @@ ENDPOINTS = {
         "/p3/health",
         "/p3/version",
         "/p3/status"
+    ],
+    "Project 4 (via Gateway)": [
+        "/p4",
+        "/p4/health",
+        "/p4/version",
+        "/p4/status"
     ]
 }
 
 # Direct Cloud Run URLs (for comparison)
-DIRECT_URLS = {
-    "Project 1 (Direct)": "https://project-1-494821814955.us-central1.run.app",
-    "Project 2 (Direct)": "https://project-2-rag-494821814955.us-central1.run.app",
-    "Project 3 (Direct)": "https://project-3-494821814955.us-central1.run.app"
-}
 
 # Colors for terminal output
 class Colors:
@@ -245,16 +246,7 @@ def main():
         # Test Gateway endpoints with authentication
         run_tests(auth_token=firebase_token)
         
-        # Also test direct Cloud Run URLs (they should be internal-only and fail)
-        print(f"\n{Colors.BOLD}{Colors.BLUE}Testing Direct Cloud Run URLs (should fail - internal ingress only):{Colors.END}")
-        for service, base_url in DIRECT_URLS.items():
-            print(f"\n{Colors.CYAN}{service}:{Colors.END} {base_url}/health")
-            result = test_endpoint(f"{base_url}/health", firebase_token)
-            status = result["status_code"]
-            if isinstance(status, int):
-                print(f"  {print_result(status, result['success'])}")
-            else:
-                print(f"  {Colors.RED}{status}{Colors.END}")
+        
     else:
         print(f"\n{Colors.YELLOW}⚠ Proceeding without authentication (expect 401 errors){Colors.END}")
         # Test without authentication to see the behavior

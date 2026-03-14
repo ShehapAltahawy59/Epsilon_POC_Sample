@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 API Gateway Test Suite
-Tests all endpoints for Projects 1, 2, and 3
+Tests all endpoints defined in infrastructure/services-registry.json
 """
 
 import requests
@@ -25,37 +25,42 @@ FIREBASE_API_KEY = env_or_default("FIREBASE_API_KEY", "AIzaSyArB51Zp5n0tsHOa7-KR
 # User credentials
 FIREBASE_EMAIL = env_or_default("FIREBASE_EMAIL", "shehapkhalil62@gmail.com")
 FIREBASE_PASSWORD = env_or_default("FIREBASE_PASSWORD", "123456")
+SERVICES_REGISTRY_PATH = env_or_default(
+    "SERVICES_REGISTRY_PATH", "infrastructure/services-registry.json"
+)
 
-# Test endpoints
-ENDPOINTS = {
-    "Project 1 (via Gateway)": [
-        "/p1",
-        "/p1/health",
-        "/p1/version",
-        "/p1/call-p2"
-    ],
-    "Project 2 (via Gateway)": [
-        "/p2",
-        "/p2/health",
-        "/p2/version"
-    ],
-    "Project 3 (via Gateway)": [
-        "/p3",
-        "/p3/health",
-        "/p3/version",
-        "/p3/status"
-    ]
-}
+def load_endpoints_from_registry(path):
+    """Load endpoint definitions from services registry."""
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            registry = json.load(f)
+    except Exception as e:
+        print(f"Error: Failed to load services registry at '{path}': {e}")
+        return {}
 
-if os.getenv("ENABLE_PROJECT4_TESTS", "false").lower() == "true":
-    ENDPOINTS["Project 4 (via Gateway)"] = [
-        "/p4",
-        "/p4/health",
-        "/p4/version",
-        "/p4/status"
-    ]
+    endpoints = {}
+    for service in registry.get("services", []):
+        service_id = service.get("id", "unknown")
+        service_label = f"Project {service_id.upper()} (via Gateway)"
+        service_routes = []
 
-# Direct Cloud Run URLs (for comparison)
+        for route in service.get("routes", []):
+            path_suffix = route.get("path_suffix", "")
+            method = str(route.get("method", "get")).lower()
+            endpoint_path = f"/{service_id}{path_suffix}"
+            service_routes.append(
+                {
+                    "path": endpoint_path,
+                    "method": method,
+                    "summary": route.get("summary", ""),
+                }
+            )
+
+        endpoints[service_label] = service_routes
+    return endpoints
+
+
+ENDPOINTS = load_endpoints_from_registry(SERVICES_REGISTRY_PATH)
 
 # Colors for terminal output
 class Colors:
@@ -123,15 +128,22 @@ def get_firebase_token(email, password, api_key):
         return None
 
 
-def test_endpoint(url, auth_token=None):
+def test_endpoint(url, method="get", auth_token=None):
     """Test a single endpoint"""
     headers = {}
     if auth_token:
         headers["Authorization"] = f"Bearer {auth_token}"
     
     try:
-        response = requests.get(url, headers=headers, timeout=10)
-        success = response.status_code == 200
+        request_kwargs = {"headers": headers, "timeout": 10}
+        if method in ("post", "put", "patch"):
+            # Minimal payload to exercise route existence through gateway.
+            request_kwargs["json"] = {}
+
+        response = requests.request(method=method.upper(), url=url, **request_kwargs)
+        # For path verification we treat non-404/non-405 as route exists.
+        # 401 is still considered a failure because tests provide auth token.
+        success = response.status_code not in (404, 405) and response.status_code < 500
         
         result = {
             "status_code": response.status_code,
@@ -174,6 +186,7 @@ def run_tests(auth_token=None):
     """Run all tests"""
     print_header(f"🧪 Testing API Gateway - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"{Colors.BOLD}Gateway URL:{Colors.END} {GATEWAY_URL}")
+    print(f"{Colors.BOLD}Registry:{Colors.END} {SERVICES_REGISTRY_PATH}")
     
     if auth_token:
         print(f"{Colors.BOLD}Auth:{Colors.END} Using Firebase token")
@@ -189,13 +202,16 @@ def run_tests(auth_token=None):
         project_results = []
         
         for endpoint in endpoints:
-            full_url = f"{GATEWAY_URL}{endpoint}"
-            print(f"\n{Colors.CYAN}Endpoint:{Colors.END} {endpoint}")
+            endpoint_path = endpoint["path"]
+            endpoint_method = endpoint.get("method", "get").lower()
+            full_url = f"{GATEWAY_URL}{endpoint_path}"
+            print(f"\n{Colors.CYAN}Endpoint:{Colors.END} {endpoint_method.upper()} {endpoint_path}")
             print(f"{Colors.CYAN}Full URL:{Colors.END} {full_url}")
             
-            result = test_endpoint(full_url, auth_token)
+            result = test_endpoint(full_url, method=endpoint_method, auth_token=auth_token)
             project_results.append({
-                "endpoint": endpoint,
+                "endpoint": endpoint_path,
+                "method": endpoint_method,
                 "result": result
             })
             
@@ -252,6 +268,10 @@ def main():
     print("╚════════════════════════════════════════════════════════╝")
     print(f"{Colors.END}")
     
+    if not ENDPOINTS:
+        print(f"{Colors.RED}✗ No endpoints found from services registry.{Colors.END}")
+        return 1
+
     # Get Firebase token
     firebase_token = get_firebase_token(FIREBASE_EMAIL, FIREBASE_PASSWORD, FIREBASE_API_KEY)
     

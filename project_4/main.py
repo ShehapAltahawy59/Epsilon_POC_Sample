@@ -109,6 +109,23 @@ async def version(request: Request):
         )
     )
 
+app.get("/status")
+async def status():
+    """Extended status endpoint"""
+    lib_info = get_lib_info()
+    logger.info("Status check requested", lib_version=lib_info["version"])
+    
+    return JSONResponse(
+        content=format_response(
+            data={
+                "service": "Project 4",
+                "operational": True,
+                "shared_lib_version": lib_info["version"],
+                "endpoints": ["/", "/health", "/version", "/status"]
+            },
+            message="All systems operational"
+        )
+    )
 
 if __name__ == "__main__":
     import uvicorn

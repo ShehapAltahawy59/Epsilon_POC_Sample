@@ -1,0 +1,192 @@
+{
+  "displayName": "Lean Hub - Overview",
+  "mosaicLayout": {
+    "columns": 12,
+    "tiles": [
+      {
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Request Count by Service",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "resource.type=\"cloud_run_revision\" metric.type=\"run.googleapis.com/request_count\"",
+                    "aggregation": {
+                      "alignmentPeriod": "60s",
+                      "perSeriesAligner": "ALIGN_RATE",
+                      "crossSeriesReducer": "REDUCE_SUM",
+                      "groupByFields": ["resource.label.service_name"]
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Response Latency (p50)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "resource.type=\"cloud_run_revision\" metric.type=\"run.googleapis.com/request_latencies\"",
+                    "aggregation": {
+                      "alignmentPeriod": "60s",
+                      "perSeriesAligner": "ALIGN_PERCENTILE_50",
+                      "crossSeriesReducer": "REDUCE_MEAN",
+                      "groupByFields": ["resource.label.service_name"]
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "yPos": 4,
+        "width": 4,
+        "height": 4,
+        "widget": {
+          "title": "Active Instances",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "resource.type=\"cloud_run_revision\" metric.type=\"run.googleapis.com/container/instance_count\"",
+                    "aggregation": {
+                      "alignmentPeriod": "60s",
+                      "perSeriesAligner": "ALIGN_MEAN",
+                      "crossSeriesReducer": "REDUCE_SUM",
+                      "groupByFields": ["resource.label.service_name"]
+                    }
+                  }
+                },
+                "plotType": "STACKED_BAR"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "xPos": 4,
+        "yPos": 4,
+        "width": 4,
+        "height": 4,
+        "widget": {
+          "title": "CPU Utilization",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "resource.type=\"cloud_run_revision\" metric.type=\"run.googleapis.com/container/cpu/utilizations\"",
+                    "aggregation": {
+                      "alignmentPeriod": "60s",
+                      "perSeriesAligner": "ALIGN_DELTA",
+                      "crossSeriesReducer": "REDUCE_MEAN",
+                      "groupByFields": ["resource.label.service_name"]
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "xPos": 8,
+        "yPos": 4,
+        "width": 4,
+        "height": 4,
+        "widget": {
+          "title": "Memory Utilization",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "resource.type=\"cloud_run_revision\" metric.type=\"run.googleapis.com/container/memory/utilizations\"",
+                    "aggregation": {
+                      "alignmentPeriod": "60s",
+                      "perSeriesAligner": "ALIGN_DELTA",
+                      "crossSeriesReducer": "REDUCE_MEAN",
+                      "groupByFields": ["resource.label.service_name"]
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "yPos": 8,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Error Requests (non-2xx)",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "resource.type=\"cloud_run_revision\" metric.type=\"run.googleapis.com/request_count\" metric.label.response_code_class!=\"2xx\"",
+                    "aggregation": {
+                      "alignmentPeriod": "60s",
+                      "perSeriesAligner": "ALIGN_RATE",
+                      "crossSeriesReducer": "REDUCE_SUM",
+                      "groupByFields": ["resource.label.service_name"]
+                    }
+                  }
+                },
+                "plotType": "LINE"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 8,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Billable Instance Time",
+          "xyChart": {
+            "dataSets": [
+              {
+                "timeSeriesQuery": {
+                  "timeSeriesFilter": {
+                    "filter": "resource.type=\"cloud_run_revision\" metric.type=\"run.googleapis.com/container/billable_instance_time\"",
+                    "aggregation": {
+                      "alignmentPeriod": "60s",
+                      "perSeriesAligner": "ALIGN_RATE",
+                      "crossSeriesReducer": "REDUCE_SUM",
+                      "groupByFields": ["resource.label.service_name"]
+                    }
+                  }
+                },
+                "plotType": "STACKED_AREA"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

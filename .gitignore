@@ -67,6 +67,7 @@ docker-compose.override.yml
 .gcp/
 *.json
 !infrastructure/*.json
+!infrastructure/**/*.json
 gcp-key.json
 service-account*.json
 

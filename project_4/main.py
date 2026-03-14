@@ -23,8 +23,8 @@ from shared_libs.utils import (
 )
 
 # TODO: Update these two constants after copying this template.
-SERVICE_CODE = "project_template"   # Example: project_5
-SERVICE_SLUG = "project-template"   # Example: project-5
+SERVICE_CODE = "project_4"   # Example: project_5
+SERVICE_SLUG = "project_4"   # Example: project-5
 
 app = FastAPI(title="Project Template API", version="1.0.0")
 
@@ -92,6 +92,7 @@ async def health(request: Request):
             message="Service is operational",
         )
     )
+
 
 
 @app.get("/version")

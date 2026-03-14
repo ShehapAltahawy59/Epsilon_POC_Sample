@@ -111,7 +111,7 @@ terraform apply -target=google_monitoring_alert_policy.high_response_time
 
 ```bash
 # Create dashboard from JSON
-gcloud monitoring dashboards create --config-from-file=infrastructure/dashboard-config.json
+gcloud monitoring dashboards create --config-from-file=infrastructure/monitoring/dashboard-config.json
 
 # Or use the Cloud Console
 # https://console.cloud.google.com/monitoring/dashboards
@@ -130,7 +130,7 @@ gcloud alpha monitoring channels create \
 gcloud alpha monitoring channels list
 
 # Update Terraform with channel ID
-# infrastructure/monitoring-dashboard.tf
+# infrastructure/monitoring/monitoring-dashboard.tf
 # variable "notification_channels" = ["projects/PROJECT_ID/notificationChannels/CHANNEL_ID"]
 ```
 
@@ -332,7 +332,7 @@ trace="projects/PROJECT_ID/traces/TRACE_ID"
 
 ### Update Dashboard
 ```bash
-# Edit infrastructure/monitoring-dashboard.tf
+# Edit infrastructure/monitoring/monitoring-dashboard.tf
 # Then apply changes
 terraform apply -target=google_monitoring_dashboard.lean_hub_dashboard
 ```

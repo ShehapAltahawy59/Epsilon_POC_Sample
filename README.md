@@ -188,7 +188,6 @@ git push origin main
 │   └── tag-shared-libs.yml
 │
 ├── infrastructure/          # IaC and deployment
-│   ├── api-gateway-config.yaml
 │   ├── services-registry.json    # Single source for gateway routes/services
 │   ├── generate_api_gateway_config.py
 │   ├── deploy-all-services.sh
@@ -299,7 +298,7 @@ Use the standardized onboarding flow:
 
 - Copy `project_template/` -> new folder (for example `project_5/`)
 - Add one thin workflow wrapper using `reusable-deploy-project.yml`
-- Register service routes in `infrastructure/services-registry.json`
+- Register service routes in `infrastructure/gateway/services-registry.json`
 - Run project deploy, then manual gateway deploy
 
 See `NEW_PROJECT_CHECKLIST.md` for full step-by-step.

@@ -13,7 +13,7 @@ Use this folder to create new services with minimal manual work.
 3. Add workflow wrapper:
    - `.github/workflows/deploy-project-5.yml`
    - Use `reusable-deploy-project.yml`
-4. Add gateway paths in `infrastructure/api-gateway-config.yaml`:
+4. Add gateway routes in `infrastructure/gateway/services-registry.json`:
    - `/p5`, `/p5/health`, `/p5/version`
 5. Redeploy:
    - Run deploy-project-5 workflow

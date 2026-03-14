@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 API Gateway Test Suite
-Tests all endpoints defined in infrastructure/services-registry.json
+ment
+Tests all endpoints defined in infrastructure/gateway/services-registry.json
 """
 
 import requests
@@ -26,7 +27,7 @@ FIREBASE_API_KEY = env_or_default("FIREBASE_API_KEY", "AIzaSyArB51Zp5n0tsHOa7-KR
 FIREBASE_EMAIL = env_or_default("FIREBASE_EMAIL", "shehapkhalil62@gmail.com")
 FIREBASE_PASSWORD = env_or_default("FIREBASE_PASSWORD", "123456")
 SERVICES_REGISTRY_PATH = env_or_default(
-    "SERVICES_REGISTRY_PATH", "infrastructure/services-registry.json"
+    "SERVICES_REGISTRY_PATH", "infrastructure/gateway/services-registry.json"
 )
 
 def load_endpoints_from_registry(path):

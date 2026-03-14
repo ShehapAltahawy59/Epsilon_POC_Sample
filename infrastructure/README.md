@@ -2,14 +2,15 @@
 
 This directory contains all infrastructure-as-code for the Lean Hub deployment.
 
-## Files
+## Structure
 
-- `api-gateway-config.yaml` - OpenAPI spec for API Gateway with Firebase auth
-- `firebase-auth-setup.md` - Firebase Authentication setup guide
-- `deploy-all-services.sh` - Deploy all Cloud Run services
-- `deploy-gateway.sh` - Deploy API Gateway
-- `cost-optimization.md` - Cost optimization strategies
-- `terraform/` - Terraform configurations (optional)
+- `gateway/`
+  - `services-registry.json` - Source of truth for gateway routes/services
+  - `generate_api_gateway_config.py` - Generates OpenAPI config from registry
+- `monitoring/`
+  - `dashboard-config.json` - Cloud Monitoring dashboard definition
+  - `monitoring-dashboard.tf` - Terraform monitoring resources
+  - `MONITORING_SETUP.md` - Monitoring setup guide
 
 ## Quick Start
 
@@ -51,11 +52,10 @@ This will:
 - Deploy all 3 Cloud Run services (internal-only)
 - Output service URLs
 
-#### 2. Update API Gateway Config
+#### 2. Update Gateway Service Registry
 
-After deployment, update `api-gateway-config.yaml`:
-- Replace `https://project-*-HASH-uc.a.run.app` with actual URLs
-- Update Firebase project ID
+After deployment, update `gateway/services-registry.json` with any new service routes.
+The GitHub workflow generates the final OpenAPI config automatically.
 
 #### 3. Deploy API Gateway
 ```bash

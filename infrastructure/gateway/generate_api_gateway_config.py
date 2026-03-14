@@ -3,7 +3,7 @@
 Generate OpenAPI config for API Gateway from a single service registry file.
 
 This script reads:
-  - infrastructure/services-registry.json
+  - infrastructure/gateway/services-registry.json
   - live Cloud Run service URLs via gcloud
 
 Then writes:

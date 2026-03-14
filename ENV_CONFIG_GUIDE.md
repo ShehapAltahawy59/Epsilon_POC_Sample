@@ -891,7 +891,7 @@ SERVICE_NAME: core-service
 ```
 
 **3. Update API Gateway config:**
-Edit `infrastructure/api-gateway-config.yaml` to point to new service names.
+Edit `infrastructure/gateway/services-registry.json` to register new service names/routes.
 
 ### Adjust GPU Configuration (Project 2)
 
@@ -978,7 +978,7 @@ When changing deployment settings:
 - [ ] Update `deploy-project-2.yml` if Project 2 affected
 - [ ] Update `deploy-project-3.yml` if Project 3 affected
 - [ ] If changing regions, create Artifact Registry in new region
-- [ ] If changing service names, update `api-gateway-config.yaml`
+- [ ] If changing service names, update `infrastructure/gateway/services-registry.json`
 - [ ] Commit and push changes
 - [ ] Verify workflows run successfully
 

@@ -275,7 +275,7 @@ All logs have correlation_id="abc123"
 
 ### 5. API Gateway Configuration
 
-**File:** `infrastructure/api-gateway-config.yaml`
+**File:** `infrastructure/gateway/services-registry.json` (source of truth, generated to OpenAPI during deploy)
 
 **What:** OpenAPI 2.0 spec defining routes and authentication
 
@@ -392,7 +392,7 @@ permissions:
 
 **What It Does:**
 1. Gets Cloud Run URLs for all 3 services
-2. Replaces placeholders in `api-gateway-config.yaml`
+2. Generates OpenAPI config from `infrastructure/gateway/services-registry.json`
 3. Creates new API Gateway config (timestamped)
 4. Updates gateway to use new config
 
@@ -896,7 +896,7 @@ gcloud artifacts repositories add-iam-policy-binding lean-hub \
    - Test from Cloud Shell with auth token
 
 3. **Wrong path in gateway config**
-   - Check `api-gateway-config.yaml`
+   - Check `infrastructure/gateway/services-registry.json`
    - Verify URL matches actual Cloud Run URL
 
 #### Issue 3: Gateway Returns 401 Unauthorized

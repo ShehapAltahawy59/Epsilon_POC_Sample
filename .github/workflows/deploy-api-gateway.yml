@@ -33,9 +33,9 @@ jobs:
 
       - name: Generate API Gateway Config from Registry
         run: |
-          echo "🧠 Generating gateway config from infrastructure/services-registry.json ..."
-          python3 infrastructure/generate_api_gateway_config.py \
-            --registry infrastructure/services-registry.json \
+          echo "🧠 Generating gateway config from infrastructure/gateway/services-registry.json ..."
+          python3 infrastructure/gateway/generate_api_gateway_config.py \
+            --registry infrastructure/gateway/services-registry.json \
             --output /tmp/api-gateway-config-updated.json \
             --project-id "${{ env.GCP_PROJECT_ID }}" \
             --region "${{ env.GCP_REGION }}" \

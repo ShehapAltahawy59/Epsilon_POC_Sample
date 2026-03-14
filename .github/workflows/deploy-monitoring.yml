@@ -5,8 +5,8 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'infrastructure/dashboard-config.json'
-      - 'infrastructure/monitoring-dashboard.tf'
+      - 'infrastructure/monitoring/dashboard-config.json'
+      - 'infrastructure/monitoring/monitoring-dashboard.tf'
       - '.github/workflows/deploy-monitoring.yml'
   workflow_dispatch:  # Allow manual trigger
 
@@ -53,7 +53,7 @@ jobs:
           
           # Create dashboard
           gcloud monitoring dashboards create \
-            --config-from-file=infrastructure/dashboard-config.json \
+            --config-from-file=infrastructure/monitoring/dashboard-config.json \
             --project=${{ secrets.GCP_PROJECT_ID }}
           
           echo "✅ Dashboard created successfully!"

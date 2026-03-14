@@ -44,7 +44,7 @@ jobs:
 
 ## 3) Register service once for API Gateway automation
 
-In `infrastructure/services-registry.json`, add a service entry with:
+In `infrastructure/gateway/services-registry.json`, add a service entry with:
 
 - `id` (example: `p5`)
 - `service_name` (example: `project-5`)
@@ -52,7 +52,7 @@ In `infrastructure/services-registry.json`, add a service entry with:
 - `routes` list (`path_suffix`, `method`, `summary`, `operation_id`)
 
 The gateway deploy workflow now auto-generates OpenAPI config from this registry.
-No manual editing of `infrastructure/api-gateway-config.yaml` is required.
+No manual gateway OpenAPI file editing is required.
 
 ## 5) Optional test coverage
 

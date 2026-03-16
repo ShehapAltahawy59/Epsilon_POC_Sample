@@ -12,7 +12,7 @@ jobs:
     uses: ./.github/workflows/reusable-deploy-project.yml
     secrets: inherit
     with:
-      deployment_name: Build and Deploy Project 2 RAG
+      deployment_name: Build and Deploy Project 5
       project_path: project_5
       service_name: project-5-rag
       dockerfile_path: project_5/Dockerfile

@@ -93,11 +93,13 @@ class JSONLogger:
         self.project_id = project_id or os.getenv('GCP_PROJECT_ID', 'unknown')
         self.logger = logging.getLogger(service_name)
         self.logger.setLevel(logging.INFO)
-        
-        # Create console handler with JSON formatting
-        handler = logging.StreamHandler()
-        handler.setLevel(logging.INFO)
-        self.logger.addHandler(handler)
+        self.logger.propagate = False
+
+        if not self.logger.handlers:
+            handler = logging.StreamHandler(sys.stdout)
+            handler.setLevel(logging.INFO)
+            handler.setFormatter(logging.Formatter('%(message)s'))
+            self.logger.addHandler(handler)
     
     def _get_trace_context(self) -> Dict[str, str]:
         """

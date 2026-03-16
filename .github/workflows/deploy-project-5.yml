@@ -14,7 +14,7 @@ jobs:
     with:
       deployment_name: Build and Deploy Project 5
       project_path: project_5
-      service_name: project-5-rag
+      service_name: project-5
       dockerfile_path: project_5/Dockerfile
       shared_lib_version_file: project_5/shared_lib_version
       max_instances: "2"

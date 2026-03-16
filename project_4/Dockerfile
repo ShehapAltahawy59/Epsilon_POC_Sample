@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # Build args passed from reusable workflow
-ARG PROJECT_PATH=project_4
+ARG PROJECT_PATH=project_template
 ARG SHARED_LIB_VERSION=v1.0.0
 ENV PROJECT_PATH=${PROJECT_PATH}
 ENV SHARED_LIB_VERSION=${SHARED_LIB_VERSION}

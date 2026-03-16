@@ -23,8 +23,8 @@ from shared_libs.utils import (
 )
 
 # TODO: Update these two constants after copying this template.
-SERVICE_CODE = "project_4"   # Example: project_5
-SERVICE_SLUG = "project_4"   # Example: project-5
+SERVICE_CODE = "project_template"   # Example: project_5
+SERVICE_SLUG = "project-template"   # Example: project-5
 
 app = FastAPI(title="Project Template API", version="1.0.0")
 
@@ -94,7 +94,6 @@ async def health(request: Request):
     )
 
 
-
 @app.get("/version")
 async def version(request: Request):
     lib_info = get_lib_info()
@@ -118,7 +117,7 @@ async def status():
     return JSONResponse(
         content=format_response(
             data={
-                "service": "Project 4",
+                "service": "Project ",
                 "operational": True,
                 "shared_lib_version": lib_info["version"],
                 "endpoints": ["/", "/health", "/version", "/status"]
@@ -126,6 +125,7 @@ async def status():
             message="All systems operational"
         )
     )
+
 
 if __name__ == "__main__":
     import uvicorn

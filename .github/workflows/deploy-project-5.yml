@@ -1,10 +1,10 @@
-name: 'Surgical Deploy: Project 2 RAG'
+name: 'Surgical Deploy: Project 5'
 
 on:
   push:
     branches: [main]
     paths:
-      - 'project_2/**'
+      - 'project_5/**'
   workflow_dispatch:
 
 jobs:
@@ -13,10 +13,10 @@ jobs:
     secrets: inherit
     with:
       deployment_name: Build and Deploy Project 2 RAG
-      project_path: project_2
-      service_name: project-2-rag
-      dockerfile_path: project_2/Dockerfile
-      shared_lib_version_file: project_2/shared_lib_version
+      project_path: project_5
+      service_name: project-5-rag
+      dockerfile_path: project_5/Dockerfile
+      shared_lib_version_file: project_5/shared_lib_version
       max_instances: "2"
       min_instances: "0"
       memory: 4Gi

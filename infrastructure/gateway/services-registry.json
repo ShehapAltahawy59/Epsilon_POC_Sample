@@ -152,6 +152,41 @@
             "response_description": "Status info"
           }
         ]
+      },
+      {
+        "id": "p5",
+        "service_name": "project-5",
+        "placeholder_url": "https://project-5-placeholder",
+        "routes": [
+          {
+            "path_suffix": "",
+            "method": "get",
+            "summary": "Project 5 Root",
+            "operation_id": "project5Root",
+            "response_description": "Successful response"
+          },
+          {
+            "path_suffix": "/health",
+            "method": "get",
+            "summary": "Project 5 Health",
+            "operation_id": "project5Health",
+            "response_description": "Healthy"
+          },
+          {
+            "path_suffix": "/version",
+            "method": "get",
+            "summary": "Project 5 Version",
+            "operation_id": "project5Version",
+            "response_description": "Version info"
+          },
+          {
+            "path_suffix": "/status",
+            "method": "get",
+            "summary": "Project 5 Status",
+            "operation_id": "project5Status",
+            "response_description": "Status info"
+          }
+        ]
       }
   ]
 }

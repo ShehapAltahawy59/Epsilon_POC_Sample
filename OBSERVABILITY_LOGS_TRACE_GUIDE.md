@@ -1,156 +1,192 @@
 # Google Cloud Logs, Trace, and Correlation Guide
 
-This guide explains how to use your current gateway tests to debug requests end-to-end in Google Cloud.
+This guide explains how to debug requests end-to-end in Google Cloud using logs, traces, and correlation IDs.
 
 It is based on:
 
 - `test_api_gateway.py` for endpoint testing through API Gateway
 - `shared_libs/utils.py` for structured logging and trace fields
-- service middleware pattern in `project_4/main.py`
+- service middleware pattern in `project_1/main.py` (same across all projects)
 
-## What You Already Have
+## How It Works
 
-- API Gateway test calls all registered routes in `infrastructure/gateway/services-registry.json`
-- Service responses include a `correlation_id` in many endpoints
-- Services emit JSON logs with:
-  - `service`
-  - `correlation_id`
-  - `trace` (formatted as `projects/<project-id>/traces/<trace-id>`) when available
-  - `trace_id` and `span_id` when available
-- FastAPI auto-instrumentation is enabled via OpenTelemetry (`setup_tracing`, `instrument_fastapi`)
+Every incoming request is automatically assigned a `correlation_id` by the service middleware.  
+Developers do **not** need to pass it manually — it is injected into every log automatically.
 
-## End-to-End Workflow
+Flow per request:
+1. Middleware generates `correlation_id` (or reads from `X-Correlation-ID` header)
+2. `set_correlation_id()` stores it in a per-request `ContextVar`
+3. Every `logger.info()` / `logger.error()` call reads it automatically
+4. Response body includes `correlation_id` for client-side lookup
 
-1. Run tests through the gateway.
-2. Pick one successful request (for example `GET /p4/version`).
-3. Copy its `correlation_id` from the response body.
-4. Search logs in Cloud Logging using that correlation ID.
-5. Open the related trace in Cloud Trace (from `trace` field).
-6. Confirm cross-service flow and latency.
+## What Is in Every Log Entry
+
+All services emit structured JSON logs to stdout with these fields:
+
+```json
+{
+  "timestamp": "2026-03-16T18:03:46.416992Z",
+  "severity": "INFO",
+  "message": "Incoming request: GET /",
+  "service": "project_1",
+  "correlation_id": "fe35155f-7bd5-4e27-a945-a268aee8fa77",
+  "trace": "projects/my-lean-hub-project/traces/6db458e12a9ea03ecdfc13e468f14ae8",
+  "trace_id": "6db458e12a9ea03ecdfc13e468f14ae8",
+  "span_id": "4464115068629571334",
+  "method": "GET",
+  "path": "/"
+}
+```
+
+Each request produces at minimum **2 log entries**:
+- Middleware log: `Incoming request: <METHOD> <PATH>`
+- Route handler log: e.g. `Hello from Project 1`, `Health check`, `Version check`
+
+## End-to-End Debug Workflow
+
+1. Run tests through the gateway
+2. Copy a `correlation_id` from any response body
+3. Search Cloud Logging with that ID
+4. Jump from logs to Cloud Trace for latency analysis
 
 ## 1) Run Gateway Tests
 
 From repo root (PowerShell):
 
 ```powershell
-python .\test_api_gateway.py
+$env:PYTHONIOENCODING="utf-8"; python .\test_api_gateway.py
 ```
 
-When a route succeeds, the script prints JSON response bodies. For endpoints that include it, copy:
-
-- `data.correlation_id`
-
-Example from your output shape:
+Every successful response includes `correlation_id` in the `data` field:
 
 ```json
 {
   "success": true,
   "data": {
-    "correlation_id": "bb240454-5eb5-46cb-803e-2ce12ab35e16"
+    "correlation_id": "fe35155f-7bd5-4e27-a945-a268aee8fa77"
   }
 }
 ```
 
 ## 2) Find Request in Cloud Logging
 
-Open **Google Cloud Console -> Logging -> Logs Explorer**.
+Open **Google Cloud Console → Logging → Logs Explorer**.
 
-Use a query like:
-
-```text
-resource.type="cloud_run_revision"
-jsonPayload.correlation_id="bb240454-5eb5-46cb-803e-2ce12ab35e16"
-```
-
-If logs are not parsed into `jsonPayload`, try:
+Search by correlation ID (works for all services):
 
 ```text
 resource.type="cloud_run_revision"
-textPayload:"bb240454-5eb5-46cb-803e-2ce12ab35e16"
+jsonPayload.correlation_id="fe35155f-7bd5-4e27-a945-a268aee8fa77"
 ```
 
-Optional filters:
+Filter by specific service:
 
 ```text
-resource.labels.service_name="project-4"
-jsonPayload.severity="INFO"
+resource.type="cloud_run_revision"
+resource.labels.service_name="project-1"
+jsonPayload.correlation_id="fe35155f-7bd5-4e27-a945-a268aee8fa77"
 ```
+
+Filter by severity:
+
+```text
+resource.type="cloud_run_revision"
+jsonPayload.severity="ERROR"
+jsonPayload.correlation_id="fe35155f-7bd5-4e27-a945-a268aee8fa77"
+```
+
+> Note: logs now go to `run.googleapis.com/stderr` as structured JSON.  
+> `textPayload` fallback is no longer needed.
 
 ## 3) Jump from Logs to Trace
 
-In matching log entries, inspect:
+In matching log entries, look for:
 
-- `jsonPayload.trace` (or `trace` field in log details)
+- `jsonPayload.trace` → `projects/<project-id>/traces/<trace-id>`
 
-This points to:
+Click the trace link in Cloud Logging log details, or open **Cloud Trace Explorer** and paste the `trace_id`.
 
-- `projects/<your-project-id>/traces/<trace-id>`
-
-Open the trace link directly from log details, or open **Trace Explorer** and search by trace ID.
-
-## 4) What Correlation ID vs Trace ID Means
+## 4) Correlation ID vs Trace ID
 
 - **Correlation ID**
-  - App-level request identifier
-  - Generated in middleware if `X-Correlation-ID` is missing
-  - Returned to clients (`X-Correlation-ID` response header and/or response JSON)
-  - Best for support/debug workflows across logs and API responses
+  - App-level identifier generated per request by service middleware
+  - Automatically included in all `logger` calls via `ContextVar`
+  - Returned in response body and `X-Correlation-ID` response header
+  - Use to find all logs for a specific request across services
 
 - **Trace ID**
-  - Infrastructure/distributed tracing identifier (Google Cloud Trace)
-  - Comes from `X-Cloud-Trace-Context`
-  - Best for latency analysis, spans, and dependency visualization
+  - Infrastructure-level identifier from Google Cloud Trace / OpenTelemetry
+  - Set by `X-Cloud-Trace-Context` header from API Gateway
+  - Use for latency analysis, span visualization, and dependency maps
 
 Use both together:
+- Start with `correlation_id` from client response → find logs
+- Follow `trace` from logs → open Cloud Trace for timeline
 
-- Start with `correlation_id` from client response
-- Find service logs
-- Follow `trace` to distributed trace timeline
+## 5) Send Your Own Correlation ID
 
-## 5) Send Your Own Correlation ID (Recommended)
-
-When calling a route manually, send your own ID:
+When calling a route manually, send a custom ID so you can find the exact request:
 
 ```powershell
 curl -i "https://lean-hub-gateway-6bbg4rzf.uc.gateway.dev/p4/version" `
   -H "Authorization: Bearer <FIREBASE_ID_TOKEN>" `
-  -H "X-Correlation-ID: demo-corr-12345"
+  -H "X-Correlation-ID: my-debug-session-001"
 ```
 
-Then search logs:
+Then search:
 
 ```text
-jsonPayload.correlation_id="demo-corr-12345"
+resource.type="cloud_run_revision"
+jsonPayload.correlation_id="my-debug-session-001"
 ```
 
-This makes troubleshooting much faster for specific user sessions.
+## 6) Adding Logging to a New Route
 
-## 6) Interpreting Common Test Outcomes
+Middleware handles `correlation_id` automatically. In a new route, just call the logger:
 
-- `200` with response body:
-  - Route exists and backend handled request
-  - Use `correlation_id` to inspect full request path in logs
+```python
+@app.get("/my-route")
+async def my_route():
+    logger.info("Processing my-route", extra_field="value")
+    # correlation_id is automatically included in the log
+```
 
-- `404 {"detail":"Not Found"}`:
-  - Usually backend route is missing/not registered, or gateway path not mapped correctly
-  - Verify both `services-registry.json` and service decorators
+To include `correlation_id` in the response body (recommended):
 
-- `401`:
-  - Auth token missing/invalid for protected endpoint
-  - Validate Firebase token generation in test script
+```python
+from shared_libs.utils import get_correlation_id
 
-## 7) Team Best Practices
+@app.get("/my-route")
+async def my_route():
+    logger.info("Processing my-route")
+    return JSONResponse(content=format_response(
+        data={
+            "result": "...",
+            "correlation_id": get_correlation_id()
+        }
+    ))
+```
 
-- Keep `correlation_id` in all service responses for debug endpoints (`/health`, `/version`, `/status`)
-- Log `correlation_id` on every important event (startup, request start/end, errors, downstream calls)
-- Ensure every service initializes tracing (`setup_tracing`) and instrumentation (`instrument_fastapi`)
-- Keep service names stable (`service.name`) so traces are readable across deployments
+## 7) Interpreting Common Test Outcomes
+
+- `200` — route exists and backend handled the request; use `correlation_id` to inspect logs
+- `422` — route exists but request body is missing required fields (expected for POST routes tested with empty body)
+- `404 {"detail":"Not Found"}` — backend route decorator is missing or wrong path; check service `@app.get(...)` decorators
+- `401` — Firebase token missing or invalid; check token generation in test script
+- `403` on downstream call — service-to-service IAM permission missing on Cloud Run
+
+## 8) Team Best Practices
+
+- Always call `logger.info()` / `logger.error()` inside every route — correlation_id is auto-included
+- Never pass `correlation_id` manually to logger — the ContextVar handles it
+- Keep `correlation_id` in all response bodies so clients and testers can search logs
+- Ensure every new service calls `setup_tracing()` and `instrument_fastapi()` at startup
+- Keep `SERVICE_CODE` and `SERVICE_SLUG` constants accurate per service
 
 ## Quick Checklist
 
-- [ ] Test ran through gateway (`test_api_gateway.py`)
-- [ ] Copied `correlation_id` from response
-- [ ] Found matching Cloud Run logs
-- [ ] Opened related trace in Cloud Trace
-- [ ] Verified service path and latency spans
-
+- [ ] Tests ran through gateway (`test_api_gateway.py`)
+- [ ] Copied `correlation_id` from response body
+- [ ] Found matching logs in Cloud Logging with `jsonPayload.correlation_id="..."`
+- [ ] Followed `trace` link to Cloud Trace timeline
+- [ ] Verified all services logged the request with same correlation ID

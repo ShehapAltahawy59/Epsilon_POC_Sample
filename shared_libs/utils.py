@@ -7,11 +7,25 @@ Cloud Monitoring metrics, OpenTelemetry tracing, and versioning for the Lean Hub
 import json
 import logging
 import os
+import sys
 import uuid
+from contextvars import ContextVar
 from datetime import datetime
 from typing import Any, Dict, Optional
 from functools import wraps
 import time
+
+_correlation_id_var: ContextVar[str] = ContextVar("correlation_id", default="")
+
+
+def set_correlation_id(value: str) -> None:
+    """Call this once in middleware after generating the correlation ID."""
+    _correlation_id_var.set(value)
+
+
+def get_correlation_id() -> str:
+    """Read the current request's correlation ID from anywhere in the call stack."""
+    return _correlation_id_var.get()
 
 
 def setup_tracing(service_name: str):
@@ -138,9 +152,13 @@ class JSONLogger:
         # Get trace context for correlation
         trace_context = self._get_trace_context()
         
-        # Generate correlation ID if not provided
+        # Auto-read from request context if not explicitly passed
         if not correlation_id:
-            correlation_id = kwargs.get('correlation_id') or str(uuid.uuid4())
+            correlation_id = (
+                _correlation_id_var.get()
+                or kwargs.get('correlation_id')
+                or str(uuid.uuid4())
+            )
         
         log_entry = {
             "timestamp": datetime.utcnow().isoformat() + "Z",

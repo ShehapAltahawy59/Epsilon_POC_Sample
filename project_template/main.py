@@ -20,6 +20,7 @@ from shared_libs.utils import (
     extract_trace_id_from_header,
     setup_tracing,
     instrument_fastapi,
+    set_correlation_id,
 )
 
 # TODO: Update these two constants after copying this template.
@@ -44,6 +45,7 @@ async def add_trace_context(request: Request, call_next):
     correlation_id = request.headers.get("X-Correlation-ID", generate_correlation_id())
     request.state.correlation_id = correlation_id
     request.state.trace_id = extract_trace_id_from_header(trace_header) if trace_header else None
+    set_correlation_id(correlation_id)
 
     logger.info(
         f"Incoming request: {request.method} {request.url.path}",

@@ -1,7 +1,5 @@
 """
-Project Template: FastAPI Service
-Copy this folder to a new project directory (for example: project_5)
-and update the service constants below.
+Project 4: FastAPI Service
 """
 
 from fastapi import FastAPI, Request
@@ -22,11 +20,10 @@ from shared_libs.utils import (
     instrument_fastapi,
 )
 
-# TODO: Update these two constants after copying this template.
-SERVICE_CODE = "project_template"   # Example: project_5
-SERVICE_SLUG = "project-template"   # Example: project-5
+SERVICE_CODE = "project_4"
+SERVICE_SLUG = "project-4"
 
-app = FastAPI(title="Project Template API", version="1.0.0")
+app = FastAPI(title="Project 4 API", version="1.0.0")
 
 project_id = os.getenv("GCP_PROJECT_ID", "local-dev")
 logger = JSONLogger(SERVICE_CODE, project_id=project_id)
@@ -45,6 +42,13 @@ async def add_trace_context(request: Request, call_next):
     request.state.correlation_id = correlation_id
     request.state.trace_id = extract_trace_id_from_header(trace_header) if trace_header else None
 
+    logger.info(
+        f"Incoming request: {request.method} {request.url.path}",
+        correlation_id,
+        method=request.method,
+        path=request.url.path
+    )
+
     response = await call_next(request)
     response.headers["X-Correlation-ID"] = correlation_id
     if trace_header:
@@ -56,7 +60,7 @@ async def add_trace_context(request: Request, call_next):
 async def startup_event():
     lib_info = get_lib_info()
     logger.info(
-        "Template service starting up",
+        "Project 4 service starting up",
         lib_version=lib_info["version"],
         project_id=project_id,
     )
@@ -66,11 +70,17 @@ async def startup_event():
 async def root(request: Request):
     lib_info = get_lib_info()
     correlation_id = getattr(request.state, "correlation_id", None)
+    logger.info(
+        "Hello from Project 4",
+        correlation_id,
+        request="root",
+        lib_version=lib_info["version"]
+    )
     return JSONResponse(
         content=format_response(
             data={
                 "service": SERVICE_CODE,
-                "message": "Hello from template-based service!",
+                "message": "Hello from Project 4!",
                 "shared_lib_version": lib_info["version"],
                 "service_version": "1.0.0",
                 "correlation_id": correlation_id,
@@ -83,6 +93,7 @@ async def root(request: Request):
 @app.get("/health")
 async def health(request: Request):
     correlation_id = getattr(request.state, "correlation_id", None)
+    logger.info("Health check", correlation_id)
     return JSONResponse(
         content=format_response(
             data={
@@ -98,6 +109,7 @@ async def health(request: Request):
 async def version(request: Request):
     lib_info = get_lib_info()
     correlation_id = getattr(request.state, "correlation_id", None)
+    logger.info("Version check", correlation_id, lib_version=lib_info["version"])
     return JSONResponse(
         content=format_response(
             data={
@@ -108,19 +120,20 @@ async def version(request: Request):
         )
     )
 
+
 @app.get("/status")
-async def status():
-    """Extended status endpoint"""
+async def status(request: Request):
     lib_info = get_lib_info()
-    logger.info("Status check requested", lib_version=lib_info["version"])
-    
+    correlation_id = getattr(request.state, "correlation_id", None)
+    logger.info("Status check", correlation_id, lib_version=lib_info["version"])
     return JSONResponse(
         content=format_response(
             data={
-                "service": "Project ",
+                "service": SERVICE_CODE,
                 "operational": True,
                 "shared_lib_version": lib_info["version"],
-                "endpoints": ["/", "/health", "/version", "/status"]
+                "endpoints": ["/", "/health", "/version", "/status"],
+                "correlation_id": correlation_id,
             },
             message="All systems operational"
         )

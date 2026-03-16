@@ -20,34 +20,33 @@ from shared_libs.utils import JSONLogger, get_lib_info, format_response, generat
 
 app = FastAPI(title="Project 1 API", version="1.0.0")
 
-# Initialize logger with project ID
 project_id = os.getenv('GCP_PROJECT_ID', 'local-dev')
 logger = JSONLogger("project_1", project_id=project_id)
 
-# Initialize OpenTelemetry tracing
 setup_tracing("project-1")
 instrument_fastapi(app)
 
 @app.middleware("http")
 async def add_trace_context(request: Request, call_next):
-    """
-    Middleware to extract and propagate trace context.
-    Sets correlation ID for request tracing across services.
-    """
-    # Extract trace from Cloud Run header
     trace_header = request.headers.get('X-Cloud-Trace-Context', '')
     if trace_header:
         os.environ['HTTP_X_CLOUD_TRACE_CONTEXT'] = trace_header
-    
-    # Generate correlation ID for this request
+
     correlation_id = request.headers.get('X-Correlation-ID', generate_correlation_id())
     request.state.correlation_id = correlation_id
-    
+    request.state.trace_id = extract_trace_id_from_header(trace_header) if trace_header else None
+
+    logger.info(
+        f"Incoming request: {request.method} {request.url.path}",
+        correlation_id,
+        method=request.method,
+        path=request.url.path
+    )
+
     response = await call_next(request)
-    
-    # Add correlation ID to response headers for tracing
     response.headers['X-Correlation-ID'] = correlation_id
-    
+    if trace_header:
+        response.headers['X-Cloud-Trace-Context'] = trace_header
     return response
 
 @app.on_event("startup")
@@ -61,17 +60,14 @@ async def startup_event():
 
 @app.get("/")
 async def root(request: Request):
-    """Root endpoint with version information"""
     lib_info = get_lib_info()
     correlation_id = getattr(request.state, 'correlation_id', None)
-    
     logger.info(
         "Hello from Project 1",
-        correlation_id=correlation_id,
+        correlation_id,
         request="root",
         lib_version=lib_info["version"]
     )
-    
     return JSONResponse(
         content=format_response(
             data={
@@ -87,8 +83,8 @@ async def root(request: Request):
 
 @app.get("/health")
 async def health(request: Request):
-    """Health check endpoint"""
     correlation_id = getattr(request.state, 'correlation_id', None)
+    logger.info("Health check", correlation_id)
     return JSONResponse(
         content=format_response(
             data={
@@ -101,9 +97,9 @@ async def health(request: Request):
 
 @app.get("/version")
 async def version(request: Request):
-    """Version information endpoint"""
     lib_info = get_lib_info()
     correlation_id = getattr(request.state, 'correlation_id', None)
+    logger.info("Version check", correlation_id, lib_version=lib_info["version"])
     return JSONResponse(
         content=format_response(
             data={
@@ -116,10 +112,6 @@ async def version(request: Request):
 
 @app.get("/call-p2")
 async def call_project2(request: Request):
-    """
-    Demo endpoint to validate cross-service correlation propagation.
-    Calls Project 2 /health and forwards correlation + trace headers.
-    """
     correlation_id = getattr(request.state, "correlation_id", generate_correlation_id())
     trace_header = request.headers.get("X-Cloud-Trace-Context", "")
     project2_url = os.getenv(
@@ -127,15 +119,13 @@ async def call_project2(request: Request):
         "https://project-2-rag-494821814955.us-central1.run.app/health",
     )
 
-    headers = {
-        "X-Correlation-ID": correlation_id,
-    }
+    headers = {"X-Correlation-ID": correlation_id}
     if trace_header:
         headers["X-Cloud-Trace-Context"] = trace_header
 
     logger.info(
         "Calling Project 2 from Project 1",
-        correlation_id=correlation_id,
+        correlation_id,
         target_url=project2_url,
         request="call-p2",
     )
@@ -163,7 +153,7 @@ async def call_project2(request: Request):
 
     logger.info(
         "Received response from Project 2",
-        correlation_id=correlation_id,
+        correlation_id,
         downstream_status=status_code,
         request="call-p2",
     )

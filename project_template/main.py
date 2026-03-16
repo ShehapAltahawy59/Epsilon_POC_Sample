@@ -45,6 +45,13 @@ async def add_trace_context(request: Request, call_next):
     request.state.correlation_id = correlation_id
     request.state.trace_id = extract_trace_id_from_header(trace_header) if trace_header else None
 
+    logger.info(
+        f"Incoming request: {request.method} {request.url.path}",
+        correlation_id,
+        method=request.method,
+        path=request.url.path
+    )
+
     response = await call_next(request)
     response.headers["X-Correlation-ID"] = correlation_id
     if trace_header:
@@ -66,6 +73,12 @@ async def startup_event():
 async def root(request: Request):
     lib_info = get_lib_info()
     correlation_id = getattr(request.state, "correlation_id", None)
+    logger.info(
+        "Hello from template service",
+        correlation_id,
+        request="root",
+        lib_version=lib_info["version"]
+    )
     return JSONResponse(
         content=format_response(
             data={
@@ -83,6 +96,7 @@ async def root(request: Request):
 @app.get("/health")
 async def health(request: Request):
     correlation_id = getattr(request.state, "correlation_id", None)
+    logger.info("Health check", correlation_id)
     return JSONResponse(
         content=format_response(
             data={
@@ -98,6 +112,7 @@ async def health(request: Request):
 async def version(request: Request):
     lib_info = get_lib_info()
     correlation_id = getattr(request.state, "correlation_id", None)
+    logger.info("Version check", correlation_id, lib_version=lib_info["version"])
     return JSONResponse(
         content=format_response(
             data={
@@ -108,19 +123,20 @@ async def version(request: Request):
         )
     )
 
-app.get("/status")
-async def status():
-    """Extended status endpoint"""
+
+@app.get("/status")
+async def status(request: Request):
     lib_info = get_lib_info()
-    logger.info("Status check requested", lib_version=lib_info["version"])
-    
+    correlation_id = getattr(request.state, "correlation_id", None)
+    logger.info("Status check", correlation_id, lib_version=lib_info["version"])
     return JSONResponse(
         content=format_response(
             data={
-                "service": "Project ",
+                "service": SERVICE_CODE,
                 "operational": True,
                 "shared_lib_version": lib_info["version"],
-                "endpoints": ["/", "/health", "/version", "/status"]
+                "endpoints": ["/", "/health", "/version", "/status"],
+                "correlation_id": correlation_id,
             },
             message="All systems operational"
         )

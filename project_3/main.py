@@ -13,8 +13,8 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from shared_libs.utils import (
-    JSONLogger, 
-    get_lib_info, 
+    JSONLogger,
+    get_lib_info,
     format_response,
     generate_correlation_id,
     extract_trace_id_from_header,
@@ -23,48 +23,35 @@ from shared_libs.utils import (
 )
 
 app = FastAPI(title="Project 3 API", version="1.0.0")
-logger = JSONLogger("project_3")
 
-# Initialize OpenTelemetry tracing
+project_id = os.getenv('GCP_PROJECT_ID', 'local-dev')
+logger = JSONLogger("project_3", project_id=project_id)
+
 setup_tracing("project-3")
 instrument_fastapi(app)
 
-# Middleware for correlation ID and trace context
 @app.middleware("http")
 async def add_trace_context(request: Request, call_next):
-    """
-    Extract or generate correlation ID and trace context.
-    Adds correlation_id to request state for use in endpoints.
-    """
-    # Extract Cloud Trace context and set env var for JSONLogger
     trace_header = request.headers.get("X-Cloud-Trace-Context", "")
     if trace_header:
         os.environ['HTTP_X_CLOUD_TRACE_CONTEXT'] = trace_header
     trace_id = extract_trace_id_from_header(trace_header) if trace_header else None
-    
-    # Extract or generate correlation ID
+
     correlation_id = request.headers.get("X-Correlation-ID") or generate_correlation_id()
-    
-    # Store in request state
     request.state.correlation_id = correlation_id
     request.state.trace_id = trace_id
-    
-    # Log request
+
     logger.info(
         f"Incoming request: {request.method} {request.url.path}",
-        correlation_id=correlation_id,
-        trace_id=trace_id,
+        correlation_id,
         method=request.method,
         path=request.url.path
     )
-    
+
     response = await call_next(request)
-    
-    # Add correlation ID to response headers
     response.headers["X-Correlation-ID"] = correlation_id
     if trace_id:
         response.headers["X-Cloud-Trace-Context"] = trace_header
-    
     return response
 
 @app.on_event("startup")
@@ -73,65 +60,69 @@ async def startup_event():
 
 @app.get("/")
 async def root(request: Request):
-    """Root endpoint with version information"""
     lib_info = get_lib_info()
     correlation_id = getattr(request.state, "correlation_id", None)
-    
     logger.info(
         "Hello from Project 3",
-        correlation_id=correlation_id,
+        correlation_id,
         request="root",
         lib_version=lib_info["version"]
     )
-    
     return JSONResponse(
         content=format_response(
             data={
                 "service": "Project 3",
                 "message": "Hello from Project 3!",
                 "shared_lib_version": lib_info["version"],
-                "service_version": "1.0.0"
+                "service_version": "1.0.0",
+                "correlation_id": correlation_id
             },
             message="Project 3 API is running"
         )
     )
 
 @app.get("/health")
-async def health():
-    """Health check endpoint"""
+async def health(request: Request):
+    correlation_id = getattr(request.state, "correlation_id", None)
+    logger.info("Health check", correlation_id)
     return JSONResponse(
         content=format_response(
-            data={"status": "healthy"},
+            data={
+                "status": "healthy",
+                "correlation_id": correlation_id
+            },
             message="Service is operational"
         )
     )
 
 @app.get("/version")
-async def version():
-    """Version information endpoint"""
+async def version(request: Request):
     lib_info = get_lib_info()
+    correlation_id = getattr(request.state, "correlation_id", None)
+    logger.info("Version check", correlation_id, lib_version=lib_info["version"])
     return JSONResponse(
         content=format_response(
             data={
                 "service_version": "1.0.0",
-                "shared_lib_info": lib_info
+                "shared_lib_info": lib_info,
+                "correlation_id": correlation_id
             }
         )
     )
 
 @app.get("/status")
-async def status():
-    """Extended status endpoint"""
+async def status(request: Request):
     lib_info = get_lib_info()
-    logger.info("Status check requested", lib_version=lib_info["version"])
-    
+    correlation_id = getattr(request.state, "correlation_id", None)
+    logger.info("Status check", correlation_id, lib_version=lib_info["version"])
     return JSONResponse(
         content=format_response(
             data={
                 "service": "Project 3",
                 "operational": True,
                 "shared_lib_version": lib_info["version"],
-                "endpoints": ["/", "/health", "/version", "/status"]
+                "endpoints": ["/", "/health", "/version", "/status"],
+                "correlation_id": correlation_id
             },
             message="All systems operational"
         )

@@ -23,6 +23,7 @@ from shared_libs.utils import (
     set_correlation_id,
 )
 
+
 # TODO: Update these two constants after copying this template.
 SERVICE_CODE = "project_5"   # Example: project_5
 SERVICE_SLUG = "project-5"   # Example: project-5

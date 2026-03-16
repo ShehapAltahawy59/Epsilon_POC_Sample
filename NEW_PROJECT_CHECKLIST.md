@@ -9,6 +9,8 @@ This checklist standardizes adding `project_5+` with low team effort.
   - `SERVICE_CODE` (example: `project_5`)
   - `SERVICE_SLUG` (example: `project-5`)
   - FastAPI title/description (optional)
+- In `project_5/Dockerfile`, update default build path:
+  - `ARG PROJECT_PATH=project_5` (not `project_template`)
 - Set `project_5/shared_lib_version` to desired pinned version (example: `3.1.0`).
 
 ## 2) Add deploy workflow wrapper
@@ -49,6 +51,16 @@ In `infrastructure/gateway/services-registry.json`, add a service entry with:
 - `service_name` (example: `project-5`)
 - `placeholder_url` (example: `https://project-5-placeholder`)
 - `routes` list (`path_suffix`, `method`, `summary`, `operation_id`)
+
+## 4) Critical naming consistency check
+
+- Keep the same service name in all 3 places (example: `project-5`):
+  - `service_name` in `.github/workflows/deploy-project-5.yml`
+  - `service_name` in `infrastructure/gateway/services-registry.json`
+  - `SERVICE_SLUG` in `project_5/main.py`
+- If names do not match, API Gateway resolves to placeholder URL and endpoints return:
+  - `503`
+  - `"no healthy upstream"`
 
 
 ## 5) Deploy order

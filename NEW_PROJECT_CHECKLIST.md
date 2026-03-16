@@ -9,7 +9,6 @@ This checklist standardizes adding `project_5+` with low team effort.
   - `SERVICE_CODE` (example: `project_5`)
   - `SERVICE_SLUG` (example: `project-5`)
   - FastAPI title/description (optional)
-- `project_5/Dockerfile` is variable-driven via `PROJECT_PATH`; no manual COPY path edits are needed.
 - Set `project_5/shared_lib_version` to desired pinned version (example: `3.1.0`).
 
 ## 2) Add deploy workflow wrapper
@@ -51,14 +50,8 @@ In `infrastructure/gateway/services-registry.json`, add a service entry with:
 - `placeholder_url` (example: `https://project-5-placeholder`)
 - `routes` list (`path_suffix`, `method`, `summary`, `operation_id`)
 
-The gateway deploy workflow now auto-generates OpenAPI config from this registry.
-No manual gateway OpenAPI file editing is required.
 
-## 5) Optional test coverage
-
-Add `Project 5 (via Gateway)` endpoints to `test_api_gateway.py`.
-
-## 6) Deploy order
+## 5) Deploy order
 
 1. Push code.
 2. Run `Surgical Deploy: Project 5`.

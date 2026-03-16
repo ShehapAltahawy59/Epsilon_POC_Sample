@@ -108,7 +108,7 @@ async def version(request: Request):
         )
     )
 
-app.get("/status")
+@app.get("/status")
 async def status():
     """Extended status endpoint"""
     lib_info = get_lib_info()
